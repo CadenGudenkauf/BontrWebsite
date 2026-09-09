@@ -14,14 +14,11 @@
     "check": "astro check"
   },
   "dependencies": {
-    "astro": "^7.3.2",
-    "gsap": "^3.15.0",
-    "three": "^0.186.0"
+    "astro": "^7.3.2"
   },
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@types/node": "^22.20.2",
-    "@types/three": "^0.185.4",
     "typescript": "^5.9.2"
   }
 }
