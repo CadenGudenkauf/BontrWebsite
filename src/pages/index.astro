@@ -1,0 +1,50 @@
+---
+import '../styles/global.css';
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#070707" />
+    <meta name="description" content="Bontr brings together ideas, people and technology to explore what's next." />
+    <link rel="icon" type="image/svg+xml" href={`${import.meta.env.BASE_URL}favicon.svg`} />
+    <title>Bontr - Shapes Tomorrow</title>
+  </head>
+  <body>
+    <div id="webgl" class="webgl" aria-hidden="true"></div>
+    <div class="vignette" aria-hidden="true"></div>
+    <main class="story">
+      <section id="hero" class="panel panel--hero" aria-labelledby="hero-title">
+        <div class="brand" data-hero-chrome>BONTR</div>
+        <div class="hero-copy" data-hero-copy>
+          <h1 id="hero-title" class="display display--hero">
+            <span>BONTR</span><em>SHAPES</em><span>TOMORROW</span>
+          </h1>
+          <p class="lede">Bridging ideas, people and technology<br />for a more human future.</p>
+          <a class="scroll-cue" href="#field" aria-label="Scroll to the next section">            <span class="scroll-cue__ring" aria-hidden="true">&darr;</span>
+            <span>Explore Bontr</span>
+          </a>
+        </div>
+        <div class="person" data-person aria-hidden="true">
+          <span class="person__head"></span>
+          <span class="person__body"></span>
+        </div>
+      </section>
+
+      <section id="field" class="panel panel--field" aria-labelledby="field-title">
+        <div class="field-copy" data-field-copy>
+          <p class="eyebrow">02 /</p>
+          <h2 id="field-title" class="display display--field">
+            <span>A WIDER</span><span>FIELD OF</span><em>POSSIBILITY</em>
+          </h2>
+          <p class="field-lede">Ideas, people and technology converge to explore what's next - expanding human potential beyond the visible.</p>
+        </div>
+      </section>
+    </main>
+    <script>
+      import '../scripts/scene.ts';
+    </script>
+  </body>
+</html>
