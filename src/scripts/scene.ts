@@ -87,8 +87,8 @@ function makeCrossMaterial(opacity = 1) {
     depthWrite: false,
     blending: THREE.AdditiveBlending,
     uniforms: {
-      uColor: { value: new THREE.Color(0xe9e7e0) },
-      uAccent: { value: new THREE.Color(0xff9b54) },
+      uColor: { value: new THREE.Color(0xffffff) },
+      uAccent: { value: new THREE.Color(0xffad70) },
       uOpacity: { value: opacity },
     },
     vertexShader,
@@ -120,120 +120,157 @@ function buildTerrain(count: number) {
   const sizes: number[] = [];
   const warmth: number[] = [];
 
-  for (let i = 0; i < count; i += 1) {
-    const x = randomBetween(-12, 12);
-    const z = randomBetween(-3.5, 8.2);
-    const ridge = Math.sin(x * 0.58) * 0.23 + Math.cos(z * 0.72) * 0.17;
-    const secondary = Math.sin((x + z) * 0.27) * 0.12;
-    const falloff = Math.abs(x) * 0.016 + Math.max(0, -z) * 0.045;
-    const y = -2.65 + ridge + secondary - falloff + randomBetween(-0.04, 0.04);
+  const surfaceCount = Math.floor(count * 0.82);
+  for (let i = 0; i < surfaceCount; i += 1) {
+    const x = randomBetween(-15, 15);
+    const z = randomBetween(-4.5, 11.5);
+    const ridge = Math.sin(x * 0.42) * 0.2 + Math.cos(z * 0.63) * 0.13;
+    const secondary = Math.sin((x - z) * 0.2) * 0.09;
+    const sweep = Math.sin(x * 0.16 + z * 0.08) * 0.11;
+    const falloff = Math.abs(x) * 0.012 + Math.max(0, -z) * 0.035;
+    const y =
+      -2.72 +
+      ridge +
+      secondary +
+      sweep -
+      falloff +
+      randomBetween(-0.022, 0.022);
     positions.push(x, y, z);
-    sizes.push(randomBetween(0.46, 1.05));
-    warmth.push(random() > 0.975 ? randomBetween(0.14, 0.48) : 0);
+    sizes.push(randomBetween(0.075, 0.22));
+    warmth.push(random() > 0.992 ? randomBetween(0.08, 0.38) : 0);
   }
 
-  return pointsFromArrays(positions, sizes, warmth, 0.64);
+  const horizonCount = count - surfaceCount;
+  for (let i = 0; i < horizonCount; i += 1) {
+    const x = randomBetween(-13.5, 13.5);
+    const z = randomBetween(-0.25, 0.55);
+    const y =
+      -2.33 +
+      Math.sin(x * 0.34) * 0.16 +
+      Math.sin(x * 0.11) * 0.08 +
+      randomBetween(-0.018, 0.018);
+    positions.push(x, y, z);
+    sizes.push(randomBetween(0.08, 0.25));
+    warmth.push(random() > 0.94 ? randomBetween(0.12, 0.52) : 0);
+  }
+
+  return pointsFromArrays(positions, sizes, warmth, 0.72);
 }
 
 function buildFlower(count: number) {
   const positions: number[] = [];
   const sizes: number[] = [];
   const warmth: number[] = [];
-  const petals = 5;
-  const petalCount = Math.floor(count * 0.72);
+  const petalAngles = [-0.18, 0.65, 1.42, 2.18, 2.98, 3.95, 5.05];
+  const petalLengths = [4.45, 4.9, 5.2, 4.35, 4.8, 4.65, 4.55];
+  const petalWidths = [1.08, 1.2, 1.08, 1.28, 1.26, 1.16, 1.2];
+  const petalCount = Math.floor(count * 0.79);
 
   for (let i = 0; i < petalCount; i += 1) {
-    const petal = Math.floor(random() * petals);
-    const along = random();
-    const angle = petal * ((Math.PI * 2) / petals) - 0.18;
+    const petal = Math.floor(random() * petalAngles.length);
+    const along = Math.pow(random(), 0.92);
+    const angle = petalAngles[petal] + Math.sin(along * Math.PI) * 0.055;
     const tangent = angle + Math.PI * 0.5;
-    const distance = 0.55 + along * 3.15;
-    const envelope = Math.pow(Math.sin(along * Math.PI), 0.62);
-    const lateral = randomBetween(-1, 1) * (0.2 + envelope * 0.92);
+    const distance = 0.42 + along * petalLengths[petal];
+    const envelope = Math.pow(Math.sin(along * Math.PI), 0.64);
+    const edgeSample = random();
+    const edgeSign = random() > 0.5 ? 1 : -1;
+    const across =
+      edgeSample < 0.34
+        ? edgeSign * randomBetween(0.72, 1)
+        : randomBetween(-0.78, 0.78);
+    const lateral = across * envelope * petalWidths[petal];
+    const curl = Math.sin(along * Math.PI) * (0.14 + petal * 0.012);
+    const ripple = Math.sin(along * Math.PI * 3.1 + petal * 0.7) * 0.055;
     const depth =
-      -0.12 - envelope * randomBetween(0.16, 0.5) + randomBetween(-0.12, 0.12);
+      -0.18 -
+      curl -
+      envelope * randomBetween(0.02, 0.38) +
+      ripple +
+      randomBetween(-0.07, 0.07);
 
     positions.push(
       Math.cos(angle) * distance + Math.cos(tangent) * lateral,
-      Math.sin(angle) * distance * 0.83 + Math.sin(tangent) * lateral * 0.83,
+      Math.sin(angle) * distance * 0.84 + Math.sin(tangent) * lateral * 0.84,
       depth,
     );
-    sizes.push(randomBetween(0.5, 1.18));
-    const centerHeat = Math.max(0, 1 - along * 3.4);
+    sizes.push(randomBetween(0.22, edgeSample < 0.34 ? 0.88 : 0.68));
+    const centerHeat = Math.max(0, 1 - along * 3.8);
     warmth.push(
       Math.max(
-        centerHeat * 0.8,
-        random() > 0.985 ? randomBetween(0.14, 0.5) : 0,
+        centerHeat * 0.22,
+        random() > 0.992 ? randomBetween(0.08, 0.42) : 0,
       ),
     );
   }
 
-  const coreCount = Math.floor(count * 0.12);
+  const coreCount = Math.floor(count * 0.07);
   for (let i = 0; i < coreCount; i += 1) {
     const theta = random() * Math.PI * 2;
-    const radius = Math.sqrt(random()) * 0.86;
+    const radius = Math.pow(random(), 0.82) * 0.78;
     positions.push(
       Math.cos(theta) * radius,
-      Math.sin(theta) * radius * 0.78,
-      randomBetween(-0.22, 0.2),
+      Math.sin(theta) * radius * 0.82,
+      randomBetween(-0.24, 0.22),
     );
-    sizes.push(randomBetween(0.62, 1.36));
-    warmth.push(randomBetween(0.62, 1));
+    sizes.push(randomBetween(0.3, 0.94));
+    warmth.push(randomBetween(0.68, 1));
   }
 
-  const stemCount = Math.floor(count * 0.1);
-  for (let i = 0; i < stemCount; i += 1) {
-    const t = random();
+  const dustCount = count - petalCount - coreCount;
+  for (let i = 0; i < dustCount; i += 1) {
+    const theta = random() * Math.PI * 2;
+    const radius = randomBetween(3.2, 7.2);
     positions.push(
-      -0.04 + Math.sin(t * 2.2) * 0.14 + randomBetween(-0.035, 0.035),
-      -0.48 - t * 4.25,
-      randomBetween(-0.08, 0.08),
+      Math.cos(theta) * radius + randomBetween(-0.6, 0.6),
+      Math.sin(theta) * radius * randomBetween(0.42, 0.88) +
+        randomBetween(-0.55, 0.55),
+      randomBetween(-1.5, 0.7),
     );
-    sizes.push(randomBetween(0.42, 0.88));
-    warmth.push(random() > 0.992 ? randomBetween(0.1, 0.32) : 0);
+    sizes.push(randomBetween(0.1, 0.34));
+    warmth.push(random() > 0.982 ? randomBetween(0.06, 0.38) : 0);
   }
 
-  const leafCount = Math.floor(count * 0.06);
-  for (let i = 0; i < leafCount; i += 1) {
-    const side = i % 2 === 0 ? 1 : -1;
-    const t = random();
-    const angle = side > 0 ? 0.58 : Math.PI - 0.46;
-    const tangent = angle + Math.PI * 0.5;
-    const distance = 0.15 + t * 1.45;
-    const lateral = randomBetween(-1, 1) * Math.sin(t * Math.PI) * 0.38;
-    const baseY = side > 0 ? -2.35 : -3.05;
-    positions.push(
-      Math.cos(angle) * distance + Math.cos(tangent) * lateral,
-      baseY + Math.sin(angle) * distance + Math.sin(tangent) * lateral,
-      randomBetween(-0.08, 0.08),
-    );
-    sizes.push(randomBetween(0.42, 0.9));
-    warmth.push(0);
-  }
-
-  return pointsFromArrays(positions, sizes, warmth, 0.92);
+  return pointsFromArrays(positions, sizes, warmth, 1);
 }
 function buildGalaxy(count: number) {
   const positions: number[] = [];
   const sizes: number[] = [];
   const warmth: number[] = [];
-  const arms = 4;
+  const arms = 5;
+  const armCount = Math.floor(count * 0.9);
 
-  for (let i = 0; i < count; i += 1) {
-    const radius = Math.pow(random(), 0.58) * 7.6;
+  for (let i = 0; i < armCount; i += 1) {
+    const radius = Math.pow(random(), 0.54) * 8.7;
     const arm = i % arms;
+    const armNoise = randomBetween(-0.34, 0.34) * (0.42 + radius * 0.055);
+    const spur = random() > 0.84 ? randomBetween(-0.42, 0.42) : 0;
+    const warp = Math.sin(radius * 1.7 + arm * 0.9) * 0.13;
     const angle =
-      arm * ((Math.PI * 2) / arms) + radius * 0.9 + randomBetween(-0.36, 0.36);
-    const eccentricity = 0.68 + random() * 0.22;
+      arm * ((Math.PI * 2) / arms) + radius * 1.01 + warp + armNoise + spur;
+    const eccentricity = 0.7 + random() * 0.16;
     const x = Math.cos(angle) * radius;
     const y = Math.sin(angle) * radius * eccentricity;
-    const z = randomBetween(-0.34, 0.34) * (0.35 + radius * 0.08);
+    const z = randomBetween(-0.28, 0.28) * (0.24 + radius * 0.06);
     positions.push(x, y, z);
-    sizes.push(randomBetween(0.44, radius < 1.7 ? 1.45 : 1.02));
-    const coreHeat = Math.max(0, 1 - radius / 2.25);
+    sizes.push(randomBetween(0.24, radius < 1.8 ? 0.98 : 0.68));
+    const coreHeat = Math.max(0, 1 - radius / 4.2) * 0.88;
     warmth.push(
-      Math.max(coreHeat, random() > 0.978 ? randomBetween(0.2, 0.72) : 0),
+      Math.max(coreHeat, random() > 0.976 ? randomBetween(0.16, 0.72) : 0),
     );
+  }
+
+  const hazeCount = count - armCount;
+  for (let i = 0; i < hazeCount; i += 1) {
+    const theta = random() * Math.PI * 2;
+    const radius = Math.pow(random(), 0.68) * 9.2;
+    positions.push(
+      Math.cos(theta) * radius,
+      Math.sin(theta) * radius * randomBetween(0.56, 0.9),
+      randomBetween(-0.55, 0.55),
+    );
+    sizes.push(randomBetween(0.12, 0.4));
+    warmth.push(random() > 0.99 ? randomBetween(0.08, 0.4) : 0);
   }
 
   return pointsFromArrays(positions, sizes, warmth, 0);
@@ -253,8 +290,8 @@ function buildStars(count: number) {
       Math.cos(phi) * radius * 0.64,
       Math.sin(phi) * Math.sin(theta) * radius - 16,
     );
-    sizes.push(randomBetween(0.3, 0.78));
-    warmth.push(random() > 0.985 ? randomBetween(0.18, 0.55) : 0);
+    sizes.push(randomBetween(0.07, 0.28));
+    warmth.push(random() > 0.982 ? randomBetween(0.12, 0.58) : 0);
   }
 
   return pointsFromArrays(positions, sizes, warmth, 0.38);
@@ -290,46 +327,101 @@ function buildOrbit(
   return { line, material };
 }
 
+function makeGlowSprite(color: number, opacity: number) {
+  const canvas = document.createElement("canvas");
+  canvas.width = 128;
+  canvas.height = 128;
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("2D canvas unavailable");
+  const gradient = context.createRadialGradient(64, 64, 0, 64, 64, 64);
+  gradient.addColorStop(0, "rgba(255,255,255,1)");
+  gradient.addColorStop(0.16, "rgba(255,255,255,.72)");
+  gradient.addColorStop(0.42, "rgba(255,255,255,.18)");
+  gradient.addColorStop(1, "rgba(255,255,255,0)");
+  context.fillStyle = gradient;
+  context.fillRect(0, 0, 128, 128);
+  const texture = new THREE.CanvasTexture(canvas);
+  texture.colorSpace = THREE.SRGBColorSpace;
+  const material = new THREE.SpriteMaterial({
+    map: texture,
+    color,
+    transparent: true,
+    opacity,
+    depthWrite: false,
+    blending: THREE.AdditiveBlending,
+  });
+  const sprite = new THREE.Sprite(material);
+  return { sprite, material };
+}
+
 const heroWorld = new THREE.Group();
 const fieldWorld = new THREE.Group();
 scene.add(heroWorld, fieldWorld);
 
-const terrain = buildTerrain(compact ? 1500 : 3000);
-terrain.points.rotation.x = -0.035;
+const terrain = buildTerrain(compact ? 5600 : 17500);
+terrain.points.rotation.x = -0.028;
 heroWorld.add(terrain.points);
 
-const flower = buildFlower(compact ? 3600 : 7200);
-flower.points.position.set(compact ? 2.55 : 3.65, 1.25, -12.5);
-flower.points.rotation.set(0.08, -0.06, -0.08);
+const flower = buildFlower(compact ? 14000 : 36000);
+flower.points.position.set(compact ? 6.2 : 5.15, compact ? 0.15 : 1.2, -12.2);
+flower.points.rotation.set(0.04, -0.09, -0.06);
+flower.points.scale.setScalar(compact ? 0.8 : 1.72);
 heroWorld.add(flower.points);
 
+const flowerGlow = makeGlowSprite(0xff9d58, 0.5);
+flowerGlow.sprite.position.copy(flower.points.position);
+flowerGlow.sprite.position.z += 0.35;
+flowerGlow.sprite.scale.set(compact ? 2.7 : 3.6, compact ? 2.7 : 3.6, 1);
+heroWorld.add(flowerGlow.sprite);
+
+const horizonGlow = makeGlowSprite(0xffc18a, 0.28);
+horizonGlow.sprite.position.set(compact ? 0.5 : -0.2, -2.15, -0.6);
+horizonGlow.sprite.scale.set(compact ? 4.8 : 6.8, compact ? 1.1 : 1.3, 1);
+heroWorld.add(horizonGlow.sprite);
+
 const flowerOrbit = buildOrbit(
-  compact ? 4.5 : 5.8,
-  compact ? 1.2 : 1.5,
+  compact ? 5.8 : 7.2,
+  compact ? 1.3 : 1.65,
   -0.14,
-  0.08,
+  0.32,
 );
 flowerOrbit.line.position.copy(flower.points.position);
-flowerOrbit.line.rotation.x = 0.28;
+flowerOrbit.line.rotation.x = 0.24;
 heroWorld.add(flowerOrbit.line);
 
-const galaxy = buildGalaxy(compact ? 5200 : 10500);
-galaxy.points.position.set(compact ? 1.25 : 3.2, 0.3, -30);
-galaxy.points.rotation.set(0.16, 0.02, -0.34);
-galaxy.points.scale.setScalar(compact ? 0.86 : 1);
+const flowerOrbitB = buildOrbit(
+  compact ? 4.8 : 6.1,
+  compact ? 0.92 : 1.2,
+  0.31,
+  0.14,
+);
+flowerOrbitB.line.position.copy(flower.points.position);
+flowerOrbitB.line.rotation.x = -0.16;
+heroWorld.add(flowerOrbitB.line);
+
+const galaxy = buildGalaxy(compact ? 19000 : 52000);
+galaxy.points.position.set(compact ? 5.8 : 5.15, compact ? 0.5 : 0.25, -30);
+galaxy.points.rotation.set(0.12, 0.02, -0.24);
+galaxy.points.scale.setScalar(compact ? 0.98 : 1.16);
 fieldWorld.add(galaxy.points);
 
-const galaxyOrbitA = buildOrbit(8.8, 2.3, -0.12, 0);
+const galaxyGlow = makeGlowSprite(0xffa66a, 0.7);
+galaxyGlow.sprite.position.copy(galaxy.points.position);
+galaxyGlow.sprite.position.z += 0.25;
+galaxyGlow.sprite.scale.set(compact ? 3.7 : 4.8, compact ? 3.7 : 4.8, 1);
+fieldWorld.add(galaxyGlow.sprite);
+
+const galaxyOrbitA = buildOrbit(9.8, 2.45, -0.12, 0);
 galaxyOrbitA.line.position.copy(galaxy.points.position);
 galaxyOrbitA.line.rotation.x = 0.18;
 fieldWorld.add(galaxyOrbitA.line);
 
-const galaxyOrbitB = buildOrbit(6.5, 1.25, 0.38, 0);
+const galaxyOrbitB = buildOrbit(7.2, 1.35, 0.38, 0);
 galaxyOrbitB.line.position.copy(galaxy.points.position);
 galaxyOrbitB.line.rotation.x = -0.22;
 fieldWorld.add(galaxyOrbitB.line);
 
-const stars = buildStars(compact ? 700 : 1500);
+const stars = buildStars(compact ? 2400 : 7000);
 scene.add(stars.points);
 
 const pointerTarget = new THREE.Vector2();
@@ -368,10 +460,14 @@ function applySceneState(progress: number) {
     );
     setMaterialOpacity(terrain.material, fieldMode ? 0 : 0.64);
     setMaterialOpacity(flower.material, fieldMode ? 0 : 0.92);
-    flowerOrbit.material.opacity = fieldMode ? 0 : 0.08;
-    setMaterialOpacity(galaxy.material, fieldMode ? 0.96 : 0);
-    galaxyOrbitA.material.opacity = fieldMode ? 0.2 : 0;
-    galaxyOrbitB.material.opacity = fieldMode ? 0.12 : 0;
+    flowerOrbit.material.opacity = fieldMode ? 0 : 0.55;
+    flowerOrbitB.material.opacity = fieldMode ? 0 : 0.22;
+    flowerGlow.material.opacity = fieldMode ? 0 : 0.5;
+    horizonGlow.material.opacity = fieldMode ? 0 : 0.28;
+    setMaterialOpacity(galaxy.material, fieldMode ? 0.98 : 0);
+    galaxyGlow.material.opacity = fieldMode ? 0.7 : 0;
+    galaxyOrbitA.material.opacity = fieldMode ? 0.4 : 0;
+    galaxyOrbitB.material.opacity = fieldMode ? 0.22 : 0;
     heroCopy.style.opacity = fieldMode ? "0" : "1";
     heroChrome.style.opacity = fieldMode ? "0" : "1";
     person.style.opacity = fieldMode ? "0" : "1";
@@ -402,20 +498,24 @@ function applySceneState(progress: number) {
   );
   camera.lookAt(lookX, 0.08 + pointer.y * 0.04, lookZ);
 
-  setMaterialOpacity(terrain.material, 0.64 * terrainFade);
-  setMaterialOpacity(flower.material, 0.92 * heroFade);
-  flowerOrbit.material.opacity = 0.08 * heroFade;
+  setMaterialOpacity(terrain.material, 0.72 * terrainFade);
+  setMaterialOpacity(flower.material, 0.98 * heroFade);
+  flowerOrbit.material.opacity = 0.55 * heroFade;
+  flowerOrbitB.material.opacity = 0.22 * heroFade;
+  flowerGlow.material.opacity = 0.5 * heroFade;
+  horizonGlow.material.opacity = 0.28 * terrainFade;
   setMaterialOpacity(galaxy.material, 0.98 * galaxyReveal);
-  galaxyOrbitA.material.opacity = 0.22 * galaxyReveal;
-  galaxyOrbitB.material.opacity = 0.13 * galaxyReveal;
+  galaxyGlow.material.opacity = 0.7 * galaxyReveal;
+  galaxyOrbitA.material.opacity = 0.4 * galaxyReveal;
+  galaxyOrbitB.material.opacity = 0.22 * galaxyReveal;
 
   flower.points.rotation.z = -0.08 + p * 0.2 + pointer.x * 0.018;
   flower.points.rotation.x = 0.08 - p * 0.09 + pointer.y * 0.012;
   galaxy.points.rotation.z = -0.34 + p * 0.09;
   galaxy.points.rotation.y = p * 0.045;
   const galaxyScale = THREE.MathUtils.lerp(
-    compact ? 0.66 : 0.72,
-    compact ? 0.95 : 1.08,
+    compact ? 0.46 : 0.88,
+    compact ? 0.64 : 1.32,
     galaxyReveal,
   );
   galaxy.points.scale.setScalar(galaxyScale);
@@ -454,8 +554,9 @@ function tick() {
   pointer.x += (pointerTarget.x - pointer.x) * 0.055;
   pointer.y += (pointerTarget.y - pointer.y) * 0.055;
 
-  flowerOrbit.line.rotation.z += 0.00055;
-  galaxyOrbitA.line.rotation.z += 0.00028;
+  flowerOrbit.line.rotation.z += 0.00042;
+  flowerOrbitB.line.rotation.z -= 0.00024;
+  galaxyOrbitA.line.rotation.z += 0.00022;
   galaxyOrbitB.line.rotation.z -= 0.0002;
   stars.points.rotation.y += 0.00008;
 
@@ -504,6 +605,19 @@ ScrollTrigger.create({
 
 resize();
 applySceneState(0);
+
+if (window.location.hash === "#field") {
+  scrollTarget = 1;
+  scrollProgress = 1;
+  applySceneState(1);
+  window.requestAnimationFrame(() => {
+    window.scrollTo({
+      top: document.documentElement.scrollHeight,
+      behavior: "auto",
+    });
+    ScrollTrigger.update();
+  });
+}
 
 if (reducedMotion) {
   renderOnce();
