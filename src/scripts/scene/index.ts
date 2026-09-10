@@ -27,12 +27,16 @@ import {
   createGlowMaterial,
   createMorphMaterial,
   createSimplePointMaterial,
+  createTerrainPointMaterial,
 } from './materials';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const canvas = document.querySelector<HTMLCanvasElement>('[data-scene-canvas]');
 const home = document.querySelector<HTMLElement>('.home');
+const heroBrand = document.querySelector<HTMLElement>('.hero__brand');
+const heroCopy = document.querySelector<HTMLElement>('.hero__copy');
+const fieldCopy = document.querySelector<HTMLElement>('.field__copy');
 if (!canvas || !home) {
   throw new Error('Bontr scene mount was not found.');
 }
@@ -50,12 +54,10 @@ const loadFloatArray = async (path: string) => {
 
 let referenceMorph: Float32Array | null = null;
 let referenceTerrain: Float32Array | null = null;
-let referenceBridge: Float32Array | null = null;
 try {
-  [referenceMorph, referenceTerrain, referenceBridge] = await Promise.all([
+  [referenceMorph, referenceTerrain] = await Promise.all([
     loadFloatArray('data/home-morph.f32'),
     loadFloatArray('data/home-terrain.f32'),
-    loadFloatArray('data/home-bridge.f32'),
   ]);
 } catch (error) {
   console.warn('Reference point cloud unavailable; using procedural fallback.', error);
@@ -98,23 +100,16 @@ const morphPoints = new THREE.Points(morphGeometry, morphMaterial);
 morphPoints.frustumCulled = false;
 scene.add(morphPoints);
 
-const terrainMaterial = createSimplePointMaterial(pixelRatio, 0.95);
+const foreground = new THREE.Group();
+scene.add(foreground);
+
+const terrainMaterial = createTerrainPointMaterial(pixelRatio, 0.95);
 const terrainGeometry = referenceTerrain
   ? createTerrainGeometryFromReference(referenceTerrain, quality.terrainCount)
   : createTerrainGeometry(quality.terrainCount);
 const terrainPoints = new THREE.Points(terrainGeometry, terrainMaterial);
 terrainPoints.frustumCulled = false;
-scene.add(terrainPoints);
-
-const bridgeMaterial = createSimplePointMaterial(pixelRatio, 0.7);
-const bridgeGeometry = referenceBridge
-  ? createTerrainGeometryFromReference(referenceBridge, mobile ? 14000 : 28000)
-  : null;
-const bridgePoints = bridgeGeometry ? new THREE.Points(bridgeGeometry, bridgeMaterial) : null;
-if (bridgePoints) {
-  bridgePoints.frustumCulled = false;
-  scene.add(bridgePoints);
-}
+foreground.add(terrainPoints);
 
 const starMaterial = createSimplePointMaterial(pixelRatio, 0.72);
 const stars = new THREE.Points(createStarGeometry(quality.starCount), starMaterial);
@@ -168,55 +163,11 @@ addLimb(-0.08, 0.2, 0.08, 0.42, 0.026);
 addLimb(0.08, 0.2, -0.08, 0.42, 0.026);
 addLimb(-0.1, 0.49, -0.18, 0.34, 0.022);
 addLimb(0.1, 0.49, 0.18, 0.34, 0.022);
-scene.add(person);
+foreground.add(person);
 const glowMaterial = createGlowMaterial();
 const personGlow = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.72), glowMaterial);
 personGlow.position.set(personX, personGround + 0.18, personZ - 0.55);
-scene.add(personGlow);
-
-const shadowGeometry = new THREE.BufferGeometry();
-shadowGeometry.setAttribute('position', new THREE.BufferAttribute(new Float32Array(9), 3));
-shadowGeometry.setAttribute('uv', new THREE.BufferAttribute(new Float32Array([
-  0, 0,
-  0, 1,
-  1, 0.5,
-]), 2));
-const shadowMaterial = new THREE.ShaderMaterial({
-  transparent: true,
-  depthWrite: false,
-  depthTest: false,
-  side: THREE.DoubleSide,
-  uniforms: { uOpacity: { value: 0.82 } },
-  vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
-  fragmentShader: `
-    uniform float uOpacity; varying vec2 vUv;
-    void main(){
-      float along = smoothstep(0.0, 0.045, vUv.x) * (1.0 - smoothstep(0.82, 1.0, vUv.x));
-      float edge = 1.0 - smoothstep(0.42, 0.5, abs(vUv.y - 0.5));
-      float alpha = along * edge * uOpacity;
-      if(alpha < 0.008) discard;
-      gl_FragColor = vec4(0.0, 0.0, 0.0, alpha);
-    }
-  `,
-});
-const personShadow = new THREE.Mesh(shadowGeometry, shadowMaterial);
-personShadow.frustumCulled = false;
-personShadow.renderOrder = 4;
-scene.add(personShadow);
-
-const contactShadowGeometry = new THREE.PlaneGeometry(1, 1);
-contactShadowGeometry.rotateX(-Math.PI / 2);
-const contactShadowMaterial = new THREE.ShaderMaterial({
-  transparent: true,
-  depthWrite: false,
-  depthTest: false,
-  uniforms: { uOpacity: { value: 0.54 } },
-  vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
-  fragmentShader: `uniform float uOpacity; varying vec2 vUv; void main(){ vec2 p=(vUv-0.5)*vec2(1.0,2.1); float a=(1.0-smoothstep(0.12,0.5,length(p)))*uOpacity; if(a<0.008) discard; gl_FragColor=vec4(0.0,0.0,0.0,a); }`,
-});
-const contactShadow = new THREE.Mesh(contactShadowGeometry, contactShadowMaterial);
-contactShadow.renderOrder = 4;
-scene.add(contactShadow);
+foreground.add(personGlow);
 
 const createOrbit = (
   center: THREE.Vector3,
@@ -347,6 +298,21 @@ const applyScene = (progress: number, time: number) => {
   const coreFade = 1 - smooth(0.34, 0.66, p);
   const galaxyReveal = smooth(0.54, 0.92, p);
   const travelPulse = Math.sin(morph * Math.PI);
+  const heroContent = 1 - smooth(0.08, 0.3, p);
+  const fieldContent = smooth(0.67, 0.9, p);
+
+  if (heroBrand) {
+    heroBrand.style.opacity = String(heroContent);
+    heroBrand.style.transform = `translate3d(0, ${-10 * (1 - heroContent)}px, 0)`;
+  }
+  if (heroCopy) {
+    heroCopy.style.opacity = String(heroContent);
+    heroCopy.style.transform = `translate3d(0, ${-18 * (1 - heroContent)}px, 0)`;
+  }
+  if (fieldCopy) {
+    fieldCopy.style.opacity = String(fieldContent);
+    fieldCopy.style.transform = `translate3d(0, ${18 * (1 - fieldContent)}px, 0)`;
+  }
 
   cameraCurve.getPointAt(smooth(0.02, 0.98, p), camera.position);
   targetCurve.getPointAt(smooth(0.02, 0.98, p), cameraTarget);
@@ -362,13 +328,19 @@ const applyScene = (progress: number, time: number) => {
   morphMaterial.uniforms.uTime.value = time;
   morphMaterial.uniforms.uOpacity.value = 0.98 * (1 - travelPulse * 0.12);
 
+  const foregroundTravel = smooth(0.0, 1.0, foregroundExit);
+  foreground.position.set(-0.08 * foregroundTravel, -0.54 * foregroundTravel, 1.08 * foregroundTravel);
+
   terrainMaterial.uniforms.uTime.value = time;
-  terrainMaterial.uniforms.uProgress.value = foregroundExit;
-  terrainMaterial.uniforms.uOpacity.value = 0.94 * (1 - foregroundExit);
-  const bridgeFade = 1 - smooth(0.22, 0.62, p);
-  bridgeMaterial.uniforms.uTime.value = time;
-  bridgeMaterial.uniforms.uProgress.value = foregroundExit * 0.46;
-  bridgeMaterial.uniforms.uOpacity.value = bridgePoints ? 0.66 * bridgeFade : 0;
+  terrainMaterial.uniforms.uOpacity.value = 0.95 * (1 - foregroundTravel);
+  const lightLocalX = FLOWER_CENTER.x - foreground.position.x;
+  const lightLocalZ = FLOWER_CENTER.z - foreground.position.z;
+  const shadowDirection = terrainMaterial.uniforms.uShadowDir.value as THREE.Vector2;
+  shadowDirection.set((personX - lightLocalX) * 0.24, (personZ - lightLocalZ) * 1.34).normalize();
+  (terrainMaterial.uniforms.uShadowOrigin.value as THREE.Vector2).set(personX, personZ);
+  terrainMaterial.uniforms.uShadowLength.value = 4.75 + foregroundTravel * 0.45;
+  terrainMaterial.uniforms.uShadowOpacity.value = 0.9 * (1 - smooth(0.68, 1, foregroundTravel));
+
   starMaterial.uniforms.uTime.value = time;
   starMaterial.uniforms.uProgress.value = p * 0.05;
   starMaterial.uniforms.uOpacity.value = 0.38 + p * 0.16;
@@ -378,41 +350,13 @@ const applyScene = (progress: number, time: number) => {
   flowerGlow.quaternion.copy(camera.quaternion);
   galaxyGlowMaterial.uniforms.uOpacity.value = 0.2 * galaxyReveal;
   galaxyGlow.quaternion.copy(camera.quaternion);
-  const personCurrentX = personX - foregroundExit * 0.22;
-  const personCurrentZ = personZ + foregroundExit * 1.65;
-  const personCurrentGround = terrainHeight(personCurrentX, personCurrentZ);
-  person.visible = foregroundExit < 0.995;
-  person.position.set(personCurrentX, personCurrentGround + 0.14, personCurrentZ);
-  const personScale = personBaseScale * (1 + foregroundExit * 0.16);
-  person.scale.setScalar(personScale);
 
-  glowMaterial.uniforms.uOpacity.value = (1 - foregroundExit) * (0.075 + travelPulse * 0.012);
-  personGlow.position.set(personCurrentX, personCurrentGround + 0.2, personCurrentZ - 0.55);
+  person.visible = foregroundTravel < 0.995;
+  person.position.set(personX, personGround + 0.14, personZ);
+  person.scale.setScalar(personBaseScale * (1 + foregroundTravel * 0.04));
+  glowMaterial.uniforms.uOpacity.value = (1 - foregroundTravel) * (0.075 + travelPulse * 0.012);
+  personGlow.position.set(personX, personGround + 0.18, personZ - 0.55);
   personGlow.quaternion.copy(camera.quaternion);
-
-  const shadowDx = (personCurrentX - FLOWER_CENTER.x) * 0.24;
-  const shadowDz = (personCurrentZ - FLOWER_CENTER.z) * 1.38;
-  const shadowDistance = Math.max(0.001, Math.hypot(shadowDx, shadowDz));
-  const shadowDirX = shadowDx / shadowDistance;
-  const shadowDirZ = shadowDz / shadowDistance;
-  const shadowLength = 5.0 + foregroundExit * 0.72;
-  const shadowHalfWidth = 0.22 + foregroundExit * 0.03;
-  const shadowPerpX = -shadowDirZ;
-  const shadowPerpZ = shadowDirX;
-  const shadowTipX = personCurrentX + shadowDirX * shadowLength;
-  const shadowTipZ = personCurrentZ + shadowDirZ * shadowLength;
-  const shadowBaseY = personCurrentGround + 0.03;
-  const shadowTipY = terrainHeight(shadowTipX, shadowTipZ) + 0.032;
-  const shadowPosition = shadowGeometry.getAttribute('position') as THREE.BufferAttribute;
-  shadowPosition.setXYZ(0, personCurrentX - shadowPerpX * shadowHalfWidth, shadowBaseY, personCurrentZ - shadowPerpZ * shadowHalfWidth);
-  shadowPosition.setXYZ(1, personCurrentX + shadowPerpX * shadowHalfWidth, shadowBaseY, personCurrentZ + shadowPerpZ * shadowHalfWidth);
-  shadowPosition.setXYZ(2, shadowTipX, shadowTipY, shadowTipZ);
-  shadowPosition.needsUpdate = true;
-  shadowMaterial.uniforms.uOpacity.value = 0.94 * (1 - foregroundExit);
-
-  contactShadow.position.set(personCurrentX, personCurrentGround + 0.03, personCurrentZ);
-  contactShadow.scale.set(0.27 + foregroundExit * 0.03, 1, 0.18 + foregroundExit * 0.02);
-  contactShadowMaterial.uniforms.uOpacity.value = 0.48 * (1 - foregroundExit);
 
   flowerOrbitA.material.opacity = 0.18 * flowerFade;
   flowerOrbitB.material.opacity = 0.08 * flowerFade;
@@ -441,7 +385,7 @@ if (reduceMotion) {
       trigger: home,
       start: 'top top',
       end: 'bottom bottom',
-      scrub: 1.05,
+      scrub: 0.45,
       invalidateOnRefresh: true,
     },
   });
@@ -469,7 +413,6 @@ const resize = () => {
   camera.updateProjectionMatrix();
   morphMaterial.uniforms.uPixelRatio.value = nextPixelRatio;
   terrainMaterial.uniforms.uPixelRatio.value = nextPixelRatio;
-  bridgeMaterial.uniforms.uPixelRatio.value = nextPixelRatio;
   starMaterial.uniforms.uPixelRatio.value = nextPixelRatio;
   [flowerOrbitA.material, flowerOrbitB.material, galaxyOrbitA.material, galaxyOrbitB.material, travelMaterial]
     .forEach((material) => material.resolution.set(width, height));
@@ -490,11 +433,9 @@ window.addEventListener('pagehide', () => {
   ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
   morphPoints.geometry.dispose();
   terrainPoints.geometry.dispose();
-  bridgeGeometry?.dispose();
   stars.geometry.dispose();
   morphMaterial.dispose();
   terrainMaterial.dispose();
-  bridgeMaterial.dispose();
   starMaterial.dispose();
   flowerCore.geometry.dispose();
   flowerCoreMaterial.dispose();
@@ -508,10 +449,6 @@ window.addEventListener('pagehide', () => {
   silhouetteMaterial.dispose();
   personGlow.geometry.dispose();
   glowMaterial.dispose();
-  shadowGeometry.dispose();
-  shadowMaterial.dispose();
-  contactShadowGeometry.dispose();
-  contactShadowMaterial.dispose();
   [flowerOrbitA, flowerOrbitB, galaxyOrbitA, galaxyOrbitB].forEach(({ line, material }) => {
     line.geometry.dispose();
     material.dispose();
