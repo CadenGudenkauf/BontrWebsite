@@ -42,7 +42,7 @@ a {
 
 .home {
   position: relative;
-  min-height: 200svh;
+  min-height: 300svh;
   background: var(--page);
   isolation: isolate;
 }
@@ -82,10 +82,8 @@ a {
   overflow: hidden;
 }
 
-.home-transition {
-  position: relative;
-  min-height: 72svh;
-  pointer-events: none;
+.hero {
+  min-height: 200svh;
 }
 
 .hero__brand {
@@ -205,8 +203,12 @@ a {
 }
 
 @media (max-width: 700px) {
-  .home-transition {
-    min-height: 54svh;
+  .home {
+    min-height: 280svh;
+  }
+
+  .hero {
+    min-height: 180svh;
   }
 
   .hero__brand {

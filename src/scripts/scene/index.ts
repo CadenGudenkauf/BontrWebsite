@@ -34,9 +34,6 @@ gsap.registerPlugin(ScrollTrigger);
 
 const canvas = document.querySelector<HTMLCanvasElement>('[data-scene-canvas]');
 const home = document.querySelector<HTMLElement>('.home');
-const heroBrand = document.querySelector<HTMLElement>('.hero__brand');
-const heroCopy = document.querySelector<HTMLElement>('.hero__copy');
-const fieldCopy = document.querySelector<HTMLElement>('.field__copy');
 if (!canvas || !home) {
   throw new Error('Bontr scene mount was not found.');
 }
@@ -44,6 +41,7 @@ if (!canvas || !home) {
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const quality = getQualityProfile();
 const mobile = window.innerWidth < 720;
+const worldGap = mobile ? 16.0 : 13.8;
 const pixelRatio = Math.min(window.devicePixelRatio || 1, mobile ? 1.45 : 1.85);
 
 const loadFloatArray = async (path: string) => {
@@ -92,13 +90,22 @@ composer.addPass(bloomPass);
 composer.addPass(smaaPass);
 composer.addPass(outputPass);
 
-const morphMaterial = createMorphMaterial(pixelRatio);
 const morphGeometry = referenceMorph
   ? createMorphGeometryFromReference(referenceMorph, quality.morphCount)
   : createMorphGeometry(quality.morphCount);
-const morphPoints = new THREE.Points(morphGeometry, morphMaterial);
-morphPoints.frustumCulled = false;
-scene.add(morphPoints);
+
+const flowerMaterial = createMorphMaterial(pixelRatio);
+flowerMaterial.uniforms.uMorph.value = 0;
+const flowerPoints = new THREE.Points(morphGeometry, flowerMaterial);
+flowerPoints.frustumCulled = false;
+scene.add(flowerPoints);
+
+const galaxyMaterial = createMorphMaterial(pixelRatio);
+galaxyMaterial.uniforms.uMorph.value = 1;
+const galaxyPoints = new THREE.Points(morphGeometry, galaxyMaterial);
+galaxyPoints.position.y = -worldGap;
+galaxyPoints.frustumCulled = false;
+scene.add(galaxyPoints);
 
 const foreground = new THREE.Group();
 scene.add(foreground);
@@ -111,10 +118,14 @@ const terrainPoints = new THREE.Points(terrainGeometry, terrainMaterial);
 terrainPoints.frustumCulled = false;
 foreground.add(terrainPoints);
 
-const starMaterial = createSimplePointMaterial(pixelRatio, 0.72);
-const stars = new THREE.Points(createStarGeometry(quality.starCount), starMaterial);
-stars.frustumCulled = false;
-scene.add(stars);
+const starMaterial = createSimplePointMaterial(pixelRatio, 0.58);
+const starGeometry = createStarGeometry(quality.starCount);
+[0, -worldGap * 0.5, -worldGap].forEach((offsetY) => {
+  const points = new THREE.Points(starGeometry, starMaterial);
+  points.position.y = offsetY;
+  points.frustumCulled = false;
+  scene.add(points);
+});
 
 const flowerCoreMaterial = new THREE.MeshBasicMaterial({
   color: 0x010101,
@@ -133,7 +144,7 @@ flowerGlow.position.copy(FLOWER_CENTER).add(new THREE.Vector3(0.05, 0.08, -0.35)
 scene.add(flowerGlow);
 const galaxyGlowMaterial = createGlowMaterial();
 const galaxyGlow = new THREE.Mesh(new THREE.PlaneGeometry(3.45, 2.15), galaxyGlowMaterial);
-galaxyGlow.position.copy(GALAXY_CENTER).add(new THREE.Vector3(0.05, 0.02, -0.3));
+galaxyGlow.position.copy(GALAXY_CENTER).add(new THREE.Vector3(0.05, -worldGap + 0.02, -0.3));
 scene.add(galaxyGlow);
 
 const silhouetteMaterial = new THREE.MeshBasicMaterial({ color: 0x050505 });
@@ -168,6 +179,22 @@ const glowMaterial = createGlowMaterial();
 const personGlow = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.72), glowMaterial);
 personGlow.position.set(personX, personGround + 0.18, personZ - 0.55);
 foreground.add(personGlow);
+
+const contactShadowMaterial = new THREE.ShaderMaterial({
+  transparent: true,
+  depthWrite: false,
+  depthTest: false,
+  uniforms: { uOpacity: { value: 0.58 } },
+  vertexShader: `varying vec2 vUv; void main(){ vUv=uv; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+  fragmentShader: `uniform float uOpacity; varying vec2 vUv; void main(){ vec2 p=(vUv-0.5)*vec2(1.0,1.65); float d=dot(p,p); float a=(1.0-smoothstep(0.018,0.24,d))*uOpacity; if(a<0.008) discard; gl_FragColor=vec4(0.0,0.0,0.0,a); }`,
+});
+const contactShadowGeometry = new THREE.PlaneGeometry(1, 1);
+contactShadowGeometry.rotateX(-Math.PI / 2);
+const contactShadow = new THREE.Mesh(contactShadowGeometry, contactShadowMaterial);
+contactShadow.position.set(personX, personGround + 0.025, personZ + 0.015);
+contactShadow.scale.set(0.5, 0.78, 1);
+contactShadow.renderOrder = 5;
+foreground.add(contactShadow);
 
 const createOrbit = (
   center: THREE.Vector3,
@@ -209,8 +236,9 @@ const createOrbit = (
 };
 const flowerOrbitA = createOrbit(FLOWER_CENTER, 5.4, 1.3, 62, -6, 0.55);
 const flowerOrbitB = createOrbit(FLOWER_CENTER, 4.2, 1.02, -55, 22, 0.34);
-const galaxyOrbitA = createOrbit(GALAXY_CENTER, 8.4, 2.5, 53, -7, 0);
-const galaxyOrbitB = createOrbit(GALAXY_CENTER, 6.35, 1.9, -48, 10, 0);
+const galaxyWorldCenter = GALAXY_CENTER.clone().add(new THREE.Vector3(0, -worldGap, 0));
+const galaxyOrbitA = createOrbit(galaxyWorldCenter, 8.4, 2.5, 53, -7, 0.14);
+const galaxyOrbitB = createOrbit(galaxyWorldCenter, 6.35, 1.9, -48, 10, 0.07);
 
 const travelRandom = makeRng(7411);
 const travelPositions: number[] = [];
@@ -220,7 +248,7 @@ for (let i = 0; i < travelCount; i += 1) {
   const radius = 0.7 + Math.pow(travelRandom(), 0.75) * 7.4;
   const z = -4.2 - travelRandom() * 12.5;
   const x = 3.35 + Math.cos(angle) * radius;
-  const y = -0.05 + Math.sin(angle) * radius * 0.56;
+  const y = -worldGap * travelRandom() + Math.sin(angle) * radius * 0.24;
   const length = 0.65 + travelRandom() * 1.45;
   travelPositions.push(
     x, y, z,
@@ -247,15 +275,17 @@ const cameraCurve = new THREE.CatmullRomCurve3(
   mobile
     ? [
         new THREE.Vector3(0, 0.1, 18.0),
-        new THREE.Vector3(0.08, 0.06, 15.4),
-        new THREE.Vector3(0.32, 0.12, 12.2),
-        new THREE.Vector3(0.18, 0.02, 13.8),
+        new THREE.Vector3(0.04, -worldGap * 0.2, 16.3),
+        new THREE.Vector3(0.1, -worldGap * 0.48, 14.9),
+        new THREE.Vector3(0.14, -worldGap * 0.76, 14.1),
+        new THREE.Vector3(0.18, -worldGap + 0.02, 13.8),
       ]
     : [
         new THREE.Vector3(0, 0, 12.6),
-        new THREE.Vector3(0.03, 0.01, 11.0),
-        new THREE.Vector3(0.16, 0.05, 9.15),
-        new THREE.Vector3(0, 0, 10.9),
+        new THREE.Vector3(0.02, -worldGap * 0.2, 12.0),
+        new THREE.Vector3(0.08, -worldGap * 0.48, 11.45),
+        new THREE.Vector3(0.05, -worldGap * 0.76, 11.05),
+        new THREE.Vector3(0, -worldGap, 10.9),
       ],
   false,
   'catmullrom',
@@ -266,15 +296,17 @@ const targetCurve = new THREE.CatmullRomCurve3(
   mobile
     ? [
         new THREE.Vector3(2.1, 0.12, -4.0),
-        new THREE.Vector3(2.45, 0.08, -4.9),
-        new THREE.Vector3(3.55, -0.04, -6.7),
-        new THREE.Vector3(4.5, -0.1, -8.6),
+        new THREE.Vector3(2.5, -worldGap * 0.2, -4.9),
+        new THREE.Vector3(3.15, -worldGap * 0.48, -6.2),
+        new THREE.Vector3(3.9, -worldGap * 0.76, -7.55),
+        new THREE.Vector3(4.5, -worldGap - 0.1, -8.6),
       ]
     : [
         new THREE.Vector3(0, 0, -6.2),
-        new THREE.Vector3(0.04, 0, -6.8),
-        new THREE.Vector3(0.22, -0.02, -8.1),
-        new THREE.Vector3(0, 0, -9.75),
+        new THREE.Vector3(0.04, -worldGap * 0.2, -6.6),
+        new THREE.Vector3(0.12, -worldGap * 0.48, -7.45),
+        new THREE.Vector3(0.08, -worldGap * 0.76, -8.65),
+        new THREE.Vector3(0, -worldGap, -9.75),
       ],
   false,
   'catmullrom',
@@ -282,40 +314,16 @@ const targetCurve = new THREE.CatmullRomCurve3(
 );
 
 const clamp01 = (value: number) => THREE.MathUtils.clamp(value, 0, 1);
-const smooth = (start: number, end: number, value: number) => {
-  const x = clamp01((value - start) / (end - start));
-  return x * x * (3 - 2 * x);
-};
 const scrollState = { progress: 0 };
 const pointer = { x: 0, y: 0, targetX: 0, targetY: 0 };
 const cameraTarget = new THREE.Vector3();
 
 const applyScene = (progress: number, time: number) => {
   const p = clamp01(progress);
-  const morph = smooth(0.22, 0.92, p);
-  const foregroundExit = smooth(0.08, 0.5, p);
-  const flowerFade = 1 - smooth(0.38, 0.72, p);
-  const coreFade = 1 - smooth(0.34, 0.66, p);
-  const galaxyReveal = smooth(0.54, 0.92, p);
-  const travelPulse = Math.sin(morph * Math.PI);
-  const heroContent = 1 - smooth(0.08, 0.3, p);
-  const fieldContent = smooth(0.67, 0.9, p);
+  const travelPulse = Math.sin(p * Math.PI);
 
-  if (heroBrand) {
-    heroBrand.style.opacity = String(heroContent);
-    heroBrand.style.transform = `translate3d(0, ${-10 * (1 - heroContent)}px, 0)`;
-  }
-  if (heroCopy) {
-    heroCopy.style.opacity = String(heroContent);
-    heroCopy.style.transform = `translate3d(0, ${-18 * (1 - heroContent)}px, 0)`;
-  }
-  if (fieldCopy) {
-    fieldCopy.style.opacity = String(fieldContent);
-    fieldCopy.style.transform = `translate3d(0, ${18 * (1 - fieldContent)}px, 0)`;
-  }
-
-  cameraCurve.getPointAt(smooth(0.02, 0.98, p), camera.position);
-  targetCurve.getPointAt(smooth(0.02, 0.98, p), cameraTarget);
+  cameraCurve.getPointAt(p, camera.position);
+  targetCurve.getPointAt(p, cameraTarget);
   pointer.x += (pointer.targetX - pointer.x) * 0.045;
   pointer.y += (pointer.targetY - pointer.y) * 0.045;
   camera.position.x += pointer.x * (0.18 - p * 0.07);
@@ -324,58 +332,61 @@ const applyScene = (progress: number, time: number) => {
   cameraTarget.y += pointer.y * 0.055;
   camera.lookAt(cameraTarget);
 
-  morphMaterial.uniforms.uMorph.value = morph;
-  morphMaterial.uniforms.uTime.value = time;
-  morphMaterial.uniforms.uOpacity.value = 0.98 * (1 - travelPulse * 0.12);
+  flowerMaterial.uniforms.uMorph.value = 0;
+  flowerMaterial.uniforms.uTime.value = time;
+  flowerMaterial.uniforms.uOpacity.value = 0.98;
+  galaxyMaterial.uniforms.uMorph.value = 1;
+  galaxyMaterial.uniforms.uTime.value = time;
+  galaxyMaterial.uniforms.uOpacity.value = 0.98;
 
-  const foregroundTravel = smooth(0.0, 1.0, foregroundExit);
-  foreground.position.set(-0.08 * foregroundTravel, -0.54 * foregroundTravel, 1.08 * foregroundTravel);
-
+  foreground.position.set(0, 0, 0);
   terrainMaterial.uniforms.uTime.value = time;
-  terrainMaterial.uniforms.uOpacity.value = 0.95 * (1 - foregroundTravel);
-  const lightLocalX = FLOWER_CENTER.x - foreground.position.x;
-  const lightLocalZ = FLOWER_CENTER.z - foreground.position.z;
+  terrainMaterial.uniforms.uOpacity.value = 0.95;
   const shadowDirection = terrainMaterial.uniforms.uShadowDir.value as THREE.Vector2;
-  shadowDirection.set((personX - lightLocalX) * 0.24, (personZ - lightLocalZ) * 1.34).normalize();
+  shadowDirection.set((personX - FLOWER_CENTER.x) * 0.24, (personZ - FLOWER_CENTER.z) * 1.34).normalize();
   (terrainMaterial.uniforms.uShadowOrigin.value as THREE.Vector2).set(personX, personZ);
-  terrainMaterial.uniforms.uShadowLength.value = 4.75 + foregroundTravel * 0.45;
-  terrainMaterial.uniforms.uShadowOpacity.value = 0.9 * (1 - smooth(0.68, 1, foregroundTravel));
+  terrainMaterial.uniforms.uShadowLength.value = 4.9;
+  terrainMaterial.uniforms.uShadowOpacity.value = 0.94;
 
   starMaterial.uniforms.uTime.value = time;
-  starMaterial.uniforms.uProgress.value = p * 0.05;
-  starMaterial.uniforms.uOpacity.value = 0.38 + p * 0.16;
-  flowerCoreMaterial.opacity = 0.82 * coreFade;
-  flowerCore.visible = flowerCoreMaterial.opacity > 0.01;
-  flowerGlowMaterial.uniforms.uOpacity.value = 0.24 * flowerFade;
+  starMaterial.uniforms.uProgress.value = 0.018 + travelPulse * 0.012;
+  starMaterial.uniforms.uOpacity.value = 0.42;
+  flowerCoreMaterial.opacity = 0.82;
+  flowerCore.visible = true;
+  flowerGlowMaterial.uniforms.uOpacity.value = 0.24;
   flowerGlow.quaternion.copy(camera.quaternion);
-  galaxyGlowMaterial.uniforms.uOpacity.value = 0.2 * galaxyReveal;
+  galaxyGlowMaterial.uniforms.uOpacity.value = 0.2;
   galaxyGlow.quaternion.copy(camera.quaternion);
 
-  person.visible = foregroundTravel < 0.995;
+  person.visible = true;
   person.position.set(personX, personGround + 0.14, personZ);
-  person.scale.setScalar(personBaseScale * (1 + foregroundTravel * 0.04));
-  glowMaterial.uniforms.uOpacity.value = (1 - foregroundTravel) * (0.075 + travelPulse * 0.012);
+  person.scale.setScalar(personBaseScale);
+  glowMaterial.uniforms.uOpacity.value = 0.075;
   personGlow.position.set(personX, personGround + 0.18, personZ - 0.55);
   personGlow.quaternion.copy(camera.quaternion);
+  contactShadow.position.set(personX, personGround + 0.025, personZ + 0.015);
+  contactShadowMaterial.uniforms.uOpacity.value = 0.58;
 
-  flowerOrbitA.material.opacity = 0.18 * flowerFade;
-  flowerOrbitB.material.opacity = 0.08 * flowerFade;
-  galaxyOrbitA.material.opacity = 0.14 * galaxyReveal;
-  galaxyOrbitB.material.opacity = 0.07 * galaxyReveal;
-  travelMaterial.opacity = travelPulse * travelPulse * (mobile ? 0.004 : 0.007);
-  travelStreaks.position.z = (p - 0.5) * 2.1;
-  travelStreaks.rotation.z = p * 0.025;
+  flowerOrbitA.material.opacity = 0.18;
+  flowerOrbitB.material.opacity = 0.08;
+  galaxyOrbitA.material.opacity = 0.14;
+  galaxyOrbitB.material.opacity = 0.07;
+  travelMaterial.opacity = mobile ? 0.006 : 0.009;
+  travelStreaks.position.set(0, 0, 0);
+  travelStreaks.rotation.z = time * 0.0025;
 
   const baseBloom = mobile ? 0.25 : 0.31;
-  bloomPass.strength = baseBloom + travelPulse * (mobile ? 0.015 : 0.025) + galaxyReveal * 0.02;
-  bloomPass.radius = 0.14 + travelPulse * 0.012;
+  bloomPass.strength = baseBloom + travelPulse * (mobile ? 0.012 : 0.02);
+  bloomPass.radius = 0.14 + travelPulse * 0.01;
 };
 
 if (reduceMotion) {
   const syncReducedMotion = () => {
-    scrollState.progress = window.scrollY >= window.innerHeight * 0.5 ? 1 : 0;
+    const maxScroll = Math.max(1, home.offsetHeight - window.innerHeight);
+    scrollState.progress = clamp01((window.scrollY - home.offsetTop) / maxScroll);
   };
   window.addEventListener('scroll', syncReducedMotion, { passive: true });
+  window.addEventListener('resize', syncReducedMotion, { passive: true });
   syncReducedMotion();
 } else {
   gsap.to(scrollState, {
@@ -385,7 +396,7 @@ if (reduceMotion) {
       trigger: home,
       start: 'top top',
       end: 'bottom bottom',
-      scrub: 0.45,
+      scrub: 0.35,
       invalidateOnRefresh: true,
     },
   });
@@ -411,7 +422,8 @@ const resize = () => {
   composer.setSize(width, height);
   camera.aspect = width / Math.max(1, height);
   camera.updateProjectionMatrix();
-  morphMaterial.uniforms.uPixelRatio.value = nextPixelRatio;
+  flowerMaterial.uniforms.uPixelRatio.value = nextPixelRatio;
+  galaxyMaterial.uniforms.uPixelRatio.value = nextPixelRatio;
   terrainMaterial.uniforms.uPixelRatio.value = nextPixelRatio;
   starMaterial.uniforms.uPixelRatio.value = nextPixelRatio;
   [flowerOrbitA.material, flowerOrbitB.material, galaxyOrbitA.material, galaxyOrbitB.material, travelMaterial]
@@ -431,10 +443,11 @@ renderer.setAnimationLoop((timeMs) => {
 window.addEventListener('pagehide', () => {
   renderer.setAnimationLoop(null);
   ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
-  morphPoints.geometry.dispose();
+  morphGeometry.dispose();
   terrainPoints.geometry.dispose();
-  stars.geometry.dispose();
-  morphMaterial.dispose();
+  starGeometry.dispose();
+  flowerMaterial.dispose();
+  galaxyMaterial.dispose();
   terrainMaterial.dispose();
   starMaterial.dispose();
   flowerCore.geometry.dispose();
@@ -449,6 +462,8 @@ window.addEventListener('pagehide', () => {
   silhouetteMaterial.dispose();
   personGlow.geometry.dispose();
   glowMaterial.dispose();
+  contactShadowGeometry.dispose();
+  contactShadowMaterial.dispose();
   [flowerOrbitA, flowerOrbitB, galaxyOrbitA, galaxyOrbitB].forEach(({ line, material }) => {
     line.geometry.dispose();
     material.dispose();

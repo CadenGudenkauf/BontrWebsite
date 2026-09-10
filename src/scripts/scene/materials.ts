@@ -109,14 +109,14 @@ void main() {
   vec2 rel = localPosition.xz - uShadowOrigin;
   float along = dot(rel, uShadowDir);
   float safeLength = max(0.001, uShadowLength);
-  float t = clamp(along / safeLength, 0.0, 1.0);
+  float t = clamp((along + 0.08) / safeLength, 0.0, 1.0);
   float lateral = abs(rel.x * uShadowDir.y - rel.y * uShadowDir.x);
-  float width = mix(0.12, 0.58, t);
-  float longitudinal = smoothstep(0.0, 0.13, along) *
+  float width = mix(0.18, 0.62, t);
+  float longitudinal = smoothstep(-0.14, 0.05, along) *
     (1.0 - smoothstep(safeLength * 0.76, safeLength, along));
-  float lateralMask = 1.0 - smoothstep(width * 0.28, width, lateral);
-  float contact = 1.0 - smoothstep(0.04, 0.32, length(rel / vec2(1.0, 0.72)));
-  vShadow = clamp(max(longitudinal * lateralMask, contact * 0.62) * uShadowOpacity, 0.0, 1.0);
+  float lateralMask = 1.0 - smoothstep(width * 0.26, width, lateral);
+  float contact = 1.0 - smoothstep(0.03, 0.42, length(rel / vec2(0.86, 0.56)));
+  vShadow = clamp(max(longitudinal * lateralMask, contact * 0.9) * uShadowOpacity, 0.0, 1.0);
 
   vec4 mvPosition = modelViewMatrix * vec4(localPosition, 1.0);
   float distanceScale = clamp(9.8 / max(1.0, -mvPosition.z), 0.46, 1.75);
