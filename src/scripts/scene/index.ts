@@ -106,12 +106,12 @@ const flowerPoints = new THREE.Points(morphGeometry, flowerMaterial);
 flowerPoints.frustumCulled = false;
 scene.add(flowerPoints);
 
-// Only the missing lower edge is added here. The existing flower cloud stays intact,
-// and the complete terrain remains a separate foreground layer in front of this patch.
+// The extra petal exists only below the base ridge silhouette. It is an occluded
+// continuation behind the complete terrain, not additional visible flower geometry.
 const lowerPetalGeometry = referenceLowerPetal
-  ? createTerrainGeometryFromReference(referenceLowerPetal, mobile ? 520 : 683)
+  ? createTerrainGeometryFromReference(referenceLowerPetal, 520)
   : null;
-const lowerPetalMaterial = lowerPetalGeometry ? createSimplePointMaterial(pixelRatio, 0.72) : null;
+const lowerPetalMaterial = lowerPetalGeometry ? createSimplePointMaterial(pixelRatio, 0.58) : null;
 const lowerPetalPoints = lowerPetalGeometry && lowerPetalMaterial
   ? new THREE.Points(lowerPetalGeometry, lowerPetalMaterial)
   : null;
@@ -377,7 +377,7 @@ const applyScene = (progress: number, time: number) => {
   if (lowerPetalMaterial) {
     lowerPetalMaterial.uniforms.uTime.value = time;
     lowerPetalMaterial.uniforms.uProgress.value = 0;
-    lowerPetalMaterial.uniforms.uOpacity.value = 0.72;
+    lowerPetalMaterial.uniforms.uOpacity.value = 0.58;
   }
   galaxyMaterial.uniforms.uMorph.value = 1;
   galaxyMaterial.uniforms.uTime.value = time;
