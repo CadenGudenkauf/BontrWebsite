@@ -54,63 +54,21 @@ a {
   overflow: hidden;
   pointer-events: none;
   background: var(--page);
-  perspective: 1400px;
-  transform-style: preserve-3d;
 }
 
-.scene__layer,
-.scene__stars {
-  position: absolute;
-  will-change: transform, opacity;
-  backface-visibility: hidden;
-}
-
-.scene__stars {
-  inset: -8%;
-  opacity: 0.56;
-  background-image:
-    radial-gradient(circle at 6% 13%, rgba(255,255,255,.78) 0 1px, transparent 1.6px),
-    radial-gradient(circle at 22% 7%, rgba(255,255,255,.45) 0 .8px, transparent 1.4px),
-    radial-gradient(circle at 37% 18%, rgba(255,255,255,.7) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 48% 6%, rgba(255,255,255,.58) 0 .8px, transparent 1.4px),
-    radial-gradient(circle at 67% 12%, rgba(255,255,255,.64) 0 1px, transparent 1.5px),
-    radial-gradient(circle at 85% 8%, rgba(255,177,106,.7) 0 .9px, transparent 1.5px),
-    radial-gradient(circle at 93% 28%, rgba(255,255,255,.55) 0 .8px, transparent 1.4px),
-    radial-gradient(circle at 14% 58%, rgba(255,255,255,.45) 0 .8px, transparent 1.4px),
-    radial-gradient(circle at 77% 71%, rgba(255,177,106,.56) 0 1px, transparent 1.7px);
-  background-size: 23vw 31vh, 31vw 27vh, 38vw 34vh, 29vw 38vh, 41vw 29vh, 33vw 35vh, 26vw 32vh, 37vw 41vh, 44vw 37vh;
-  background-repeat: repeat;
-}
-
-.scene__flower {
-  top: 0;
-  left: 32.4vw;
-  width: 67.6vw;
-  height: auto;
-  transform-origin: 54% 47%;
-}
-
-.scene__terrain {
-  top: 68.35vh;
-  left: 0;
-  width: 100vw;
-  height: auto;
-  transform-origin: 50% 0;
-}
-
-.scene__galaxy {
-  top: 0;
-  left: 30.7vw;
-  width: 69.3vw;
-  height: auto;
-  opacity: 0;
-  transform-origin: 58% 52%;
+.scene__canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  background: var(--page);
 }
 
 .scene__vignette {
   position: absolute;
   inset: 0;
-  background: transparent;
+  background:
+    linear-gradient(90deg, rgba(0, 0, 0, 0.64) 0%, rgba(0, 0, 0, 0.28) 24%, transparent 52%),
+    radial-gradient(circle at 73% 36%, transparent 0 34%, rgba(0, 0, 0, 0.08) 66%, rgba(0, 0, 0, 0.36) 100%);
 }
 
 .home__sections {
@@ -235,16 +193,6 @@ a {
     width: min(41vw, 22rem);
   }
 
-  .scene__flower {
-    left: 34vw;
-    width: 70vw;
-  }
-
-  .scene__galaxy {
-    left: 28vw;
-    width: 76vw;
-  }
-
   .field__copy {
     width: min(34vw, 22rem);
   }
@@ -276,24 +224,6 @@ a {
     margin-top: 1.7rem;
   }
 
-  .scene__flower {
-    top: 7vh;
-    left: 37vw;
-    width: 88vw;
-  }
-
-  .scene__terrain {
-    top: 72vh;
-    left: -23vw;
-    width: 150vw;
-  }
-
-  .scene__galaxy {
-    top: -3vh;
-    left: 7vw;
-    width: 145vw;
-  }
-
   .field__copy {
     top: 58vh;
     left: 5.5vw;
@@ -314,11 +244,6 @@ a {
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
-  }
-
-  .scene__layer,
-  .scene__stars {
-    transition: none !important;
   }
 }
 

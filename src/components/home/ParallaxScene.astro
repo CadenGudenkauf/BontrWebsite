@@ -1,19 +1,8 @@
----
-const rawBase = import.meta.env.BASE_URL;
-const base = rawBase.endsWith('/') ? rawBase : `${rawBase}/`;
-const flower = `${base}assets/home/flower.webp`;
-const terrain = `${base}assets/home/terrain.webp`;
-const galaxy = `${base}assets/home/galaxy.webp`;
----
-
 <div class="scene" data-parallax-scene aria-hidden="true">
-  <div class="scene__stars" data-layer="stars"></div>
-  <img class="scene__layer scene__flower" data-layer="flower" src={flower} width="1586" height="1120" alt="" decoding="async" fetchpriority="high" />
-  <img class="scene__layer scene__terrain" data-layer="terrain" src={terrain} width="2346" height="400" alt="" decoding="async" fetchpriority="high" />
-  <img class="scene__layer scene__galaxy" data-layer="galaxy" src={galaxy} width="1626" height="1342" alt="" decoding="async" />
+  <canvas class="scene__canvas" data-scene-canvas></canvas>
   <div class="scene__vignette"></div>
 </div>
 
 <script>
-  import '../../scripts/parallax.ts';
+  import '../../scripts/scene/index.ts';
 </script>
