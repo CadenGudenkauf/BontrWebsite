@@ -236,6 +236,52 @@ export const createMorphGeometry = (count: number) => {
   return geometry;
 };
 
+export const createLowerPetalGeometry = (count: number) => {
+  const random = makeRng(20260910);
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const sizes = new Float32Array(count);
+  const glyphs = new Float32Array(count);
+  const seeds = new Float32Array(count);
+  const cool = new THREE.Color(0.52, 0.55, 0.57);
+  const warm = new THREE.Color(1.16, 0.5, 0.23);
+  const temp = new THREE.Color();
+
+  for (let i = 0; i < count; i += 1) {
+    const t = Math.pow(random(), 0.9);
+    const u = 1 - t;
+    const cx = u * u * u * 4.42 + 3 * u * u * t * 3.15 + 3 * u * t * t * 1.25 + t * t * t * 0.12;
+    const cy = u * u * u * -0.38 + 3 * u * u * t * -1.35 + 3 * u * t * t * -3.12 + t * t * t * -4.38;
+    const dx = 3 * u * u * (3.15 - 4.42) + 6 * u * t * (1.25 - 3.15) + 3 * t * t * (0.12 - 1.25);
+    const dy = 3 * u * u * (-1.35 + 0.38) + 6 * u * t * (-3.12 + 1.35) + 3 * t * t * (-4.38 + 3.12);
+    const invLength = 1 / Math.max(0.001, Math.hypot(dx, dy));
+    const nx = -dy * invLength;
+    const ny = dx * invLength;
+    const envelope = Math.pow(Math.sin(Math.PI * t), 0.72);
+    const edge = random() < 0.46
+      ? (random() < 0.5 ? -1 : 1) * (0.72 + random() * 0.28)
+      : random() * 2 - 1;
+    const width = envelope * (0.84 + t * 0.2);
+    setVec3(positions, i, cx + nx * edge * width + gaussian(random) * 0.025, cy + ny * edge * width + gaussian(random) * 0.025, FLOWER_CENTER.z - 0.2 - t * 0.12 + gaussian(random) * 0.1);
+
+    const edgeLight = 0.34 + Math.pow(Math.abs(edge), 1.7) * 0.58;
+    temp.copy(cool).lerp(warm, Math.exp(-t * 5.3) * 0.55).multiplyScalar(edgeLight * (0.88 + random() * 0.18));
+    setColor(colors, i, temp);
+    sizes[i] = 0.66 + random() * 0.72 + (Math.abs(edge) > 0.78 ? 0.28 : 0);
+    glyphs[i] = random() < 0.026 ? 1 : 0;
+    seeds[i] = random();
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
+  geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+  geometry.setAttribute('aGlyph', new THREE.BufferAttribute(glyphs, 1));
+  geometry.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 1));
+  geometry.computeBoundingSphere();
+  return geometry;
+};
+
 export const terrainHeight = (x: number, z: number) =>
   -2.72 - x * 0.018 - x * x * 0.0027 +
   Math.sin((x - 0.7) * 0.21) * 0.42 +
