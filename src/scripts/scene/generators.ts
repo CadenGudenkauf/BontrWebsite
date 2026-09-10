@@ -346,13 +346,13 @@ export const createMorphGeometryFromReference = (data: Float32Array, maxCount: n
     setVec3(end, i, ex, ey, ez);
 
     const angle = random() * TAU;
-    const drift = 0.35 + random() * 1.15;
+    const drift = 0.08 + random() * 0.42;
     setVec3(
       mid,
       i,
       (sx + ex) * 0.5 + Math.cos(angle) * drift,
-      (sy + ey) * 0.5 + Math.sin(angle) * drift * 0.42,
-      Math.min(sz, ez) - 0.7 - random() * 1.8,
+      (sy + ey) * 0.5 + Math.sin(angle) * drift * 0.28,
+      (sz + ez) * 0.5 - 0.22 - random() * 0.52,
     );
     setVec3(colorStart, i, data[o + 6], data[o + 7], data[o + 8]);
     setVec3(colorEnd, i, data[o + 9], data[o + 10], data[o + 11]);

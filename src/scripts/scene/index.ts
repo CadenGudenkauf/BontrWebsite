@@ -257,14 +257,14 @@ const cameraCurve = new THREE.CatmullRomCurve3(
   mobile
     ? [
         new THREE.Vector3(0, 0.1, 18.0),
-        new THREE.Vector3(0.1, 0.08, 15.0),
-        new THREE.Vector3(0.45, 0.18, 10.0),
+        new THREE.Vector3(0.08, 0.06, 15.4),
+        new THREE.Vector3(0.32, 0.12, 12.2),
         new THREE.Vector3(0.18, 0.02, 13.8),
       ]
     : [
         new THREE.Vector3(0, 0, 12.6),
-        new THREE.Vector3(0.04, 0.02, 10.7),
-        new THREE.Vector3(0.24, 0.08, 7.8),
+        new THREE.Vector3(0.03, 0.01, 11.0),
+        new THREE.Vector3(0.16, 0.05, 9.15),
         new THREE.Vector3(0, 0, 10.9),
       ],
   false,
@@ -302,11 +302,11 @@ const cameraTarget = new THREE.Vector3();
 
 const applyScene = (progress: number, time: number) => {
   const p = clamp01(progress);
-  const morph = smooth(0.28, 0.92, p);
-  const foregroundExit = smooth(0.1, 0.5, p);
-  const flowerFade = 1 - smooth(0.3, 0.58, p);
-  const coreFade = 1 - smooth(0.24, 0.5, p);
-  const galaxyReveal = smooth(0.6, 0.94, p);
+  const morph = smooth(0.34, 0.9, p);
+  const foregroundExit = smooth(0.12, 0.46, p);
+  const flowerFade = 1 - smooth(0.34, 0.56, p);
+  const coreFade = 1 - smooth(0.3, 0.5, p);
+  const galaxyReveal = smooth(0.64, 0.92, p);
   const travelPulse = Math.sin(morph * Math.PI);
 
   cameraCurve.getPointAt(smooth(0.02, 0.98, p), camera.position);
@@ -321,7 +321,7 @@ const applyScene = (progress: number, time: number) => {
 
   morphMaterial.uniforms.uMorph.value = morph;
   morphMaterial.uniforms.uTime.value = time;
-  morphMaterial.uniforms.uOpacity.value = 0.98 * (1 - travelPulse * 0.52);
+  morphMaterial.uniforms.uOpacity.value = 0.98 * (1 - travelPulse * 0.2);
 
   terrainMaterial.uniforms.uTime.value = time;
   terrainMaterial.uniforms.uProgress.value = foregroundExit;
@@ -351,13 +351,13 @@ const applyScene = (progress: number, time: number) => {
   flowerOrbitB.material.opacity = 0.08 * flowerFade;
   galaxyOrbitA.material.opacity = 0.14 * galaxyReveal;
   galaxyOrbitB.material.opacity = 0.07 * galaxyReveal;
-  travelMaterial.opacity = travelPulse * travelPulse * (mobile ? 0.025 : 0.04);
+  travelMaterial.opacity = travelPulse * travelPulse * (mobile ? 0.008 : 0.012);
   travelStreaks.position.z = (p - 0.5) * 2.1;
   travelStreaks.rotation.z = p * 0.025;
 
-  const baseBloom = mobile ? 0.26 : 0.32;
-  bloomPass.strength = baseBloom + travelPulse * (mobile ? 0.045 : 0.07) + galaxyReveal * 0.025;
-  bloomPass.radius = 0.15 + travelPulse * 0.025;
+  const baseBloom = mobile ? 0.25 : 0.31;
+  bloomPass.strength = baseBloom + travelPulse * (mobile ? 0.015 : 0.025) + galaxyReveal * 0.02;
+  bloomPass.radius = 0.14 + travelPulse * 0.012;
 };
 
 if (reduceMotion) {
