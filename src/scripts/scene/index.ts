@@ -176,6 +176,15 @@ addLimb(-0.1, 0.49, -0.18, 0.34, 0.022);
 addLimb(0.1, 0.49, 0.18, 0.34, 0.022);
 foreground.add(person);
 
+// Rebuild the person's backlight on the same depth plane as the person/ridge.
+// Keeping the z delta tiny prevents the halo from developing separate parallax.
+const personHaloMaterial = createGlowMaterial();
+personHaloMaterial.uniforms.uOpacity.value = 0.16;
+const personHalo = new THREE.Mesh(new THREE.PlaneGeometry(2.2, 1.18), personHaloMaterial);
+personHalo.position.set(personX, personGround + 0.31, personZ - 0.04);
+personHalo.frustumCulled = false;
+foreground.add(personHalo);
+
 const contactShadowMaterial = new THREE.ShaderMaterial({
   transparent: true,
   depthWrite: false,
@@ -369,6 +378,9 @@ const applyScene = (progress: number, time: number) => {
   person.visible = true;
   person.position.set(personX, personGround + 0.14, personZ);
   person.scale.setScalar(personBaseScale);
+  personHalo.position.set(personX, personGround + 0.31, personZ - 0.04);
+  personHalo.quaternion.copy(camera.quaternion);
+  personHaloMaterial.uniforms.uOpacity.value = 0.16;
   contactShadow.position.set(personX, personGround + 0.025, personZ + 0.015);
   contactShadowMaterial.uniforms.uOpacity.value = 0.58;
 
@@ -465,6 +477,8 @@ window.addEventListener('pagehide', () => {
     if (object instanceof THREE.Mesh) object.geometry.dispose();
   });
   silhouetteMaterial.dispose();
+  personHalo.geometry.dispose();
+  personHaloMaterial.dispose();
   contactShadowGeometry.dispose();
   contactShadowMaterial.dispose();
   [flowerOrbitA, flowerOrbitB, galaxyOrbitA, galaxyOrbitB].forEach(({ line, material }) => {
