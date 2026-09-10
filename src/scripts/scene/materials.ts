@@ -78,8 +78,8 @@ varying float vShimmer;
 
 void main() {
   vec3 localPosition = position;
-  localPosition.y -= uProgress * (0.35 + aSeed * 0.45);
-  localPosition.z += uProgress * (0.55 + aSeed * 0.9);
+  localPosition.y -= uProgress * (0.44 + aSeed * 0.025);
+  localPosition.z += uProgress * (0.82 + aSeed * 0.04);
   vec4 mvPosition = modelViewMatrix * vec4(localPosition, 1.0);
   float distanceScale = clamp(9.8 / max(1.0, -mvPosition.z), 0.46, 1.75);
   gl_PointSize = clamp(aSize * uPixelRatio * distanceScale, 1.0, 7.0 * uPixelRatio);

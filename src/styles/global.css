@@ -82,6 +82,12 @@ a {
   overflow: hidden;
 }
 
+.home-transition {
+  position: relative;
+  min-height: 72svh;
+  pointer-events: none;
+}
+
 .hero__brand {
   position: absolute;
   top: 4.7vh;
@@ -199,6 +205,10 @@ a {
 }
 
 @media (max-width: 700px) {
+  .home-transition {
+    min-height: 54svh;
+  }
+
   .hero__brand {
     top: 3.4vh;
     left: 5.5vw;
