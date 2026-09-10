@@ -1,40 +1,9 @@
 ---
-const compositionSrc = `${import.meta.env.BASE_URL}assets/home/composition.webp`;
+import HomeSections from './HomeSections.astro';
+import ParallaxScene from './ParallaxScene.astro';
 ---
 
 <main class="home" id="main-content">
-  <div class="home-composition">
-    <img
-      class="home-composition__art"
-      src={compositionSrc}
-      width="1173"
-      height="1341"
-      alt=""
-      decoding="async"
-      fetchpriority="high"
-      aria-hidden="true"
-    />
-
-    <section class="visual-section visual-section--hero" aria-labelledby="hero-title">
-      <div class="sr-only">
-        <p>Bontr</p>
-        <h1 id="hero-title">Bontr Shapes Tomorrow</h1>
-        <p>Bridging ideas, people and technology for a more human future.</p>
-      </div>
-      <a class="explore-hotspot" href="#field">
-        <span class="sr-only">Explore Bontr</span>
-      </a>
-    </section>
-
-    <section id="field" class="visual-section visual-section--field" aria-labelledby="field-title">
-      <div class="sr-only">
-        <p>02 /</p>
-        <h2 id="field-title">A Wider Field of Possibility</h2>
-        <p>
-          Bontr brings together ideas, people and technology to explore what's next —
-          expanding human potential beyond the visible.
-        </p>
-      </div>
-    </section>
-  </div>
+  <ParallaxScene />
+  <HomeSections />
 </main>

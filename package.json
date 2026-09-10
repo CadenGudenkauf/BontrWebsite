@@ -9,7 +9,7 @@
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
-    "build:pages": "DEPLOY_TARGET=github-pages astro build",
+    "build:pages": "cross-env DEPLOY_TARGET=github-pages astro build",
     "preview": "astro preview",
     "check": "astro check"
   },
@@ -19,6 +19,7 @@
   "devDependencies": {
     "@astrojs/check": "^0.9.4",
     "@types/node": "^22.20.2",
+    "cross-env": "^10.1.0",
     "typescript": "^5.9.2"
   }
 }
