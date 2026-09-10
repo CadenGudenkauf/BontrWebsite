@@ -177,7 +177,7 @@ addLimb(0.1, 0.49, 0.18, 0.34, 0.022);
 foreground.add(person);
 const glowMaterial = createGlowMaterial();
 const personGlow = new THREE.Mesh(new THREE.PlaneGeometry(1.9, 0.72), glowMaterial);
-personGlow.position.set(personX, personGround + 0.18, personZ - 0.55);
+personGlow.position.set(personX, personGround + 0.18, personZ - 0.055);
 foreground.add(personGlow);
 
 const contactShadowMaterial = new THREE.ShaderMaterial({
@@ -374,7 +374,7 @@ const applyScene = (progress: number, time: number) => {
   person.position.set(personX, personGround + 0.14, personZ);
   person.scale.setScalar(personBaseScale);
   glowMaterial.uniforms.uOpacity.value = 0.075;
-  personGlow.position.set(personX, personGround + 0.18, personZ - 0.55);
+  personGlow.position.set(personX, personGround + 0.18, personZ - 0.055);
   personGlow.quaternion.copy(camera.quaternion);
   contactShadow.position.set(personX, personGround + 0.025, personZ + 0.015);
   contactShadowMaterial.uniforms.uOpacity.value = 0.58;
