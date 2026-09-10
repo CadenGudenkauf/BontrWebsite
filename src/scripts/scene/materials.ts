@@ -53,7 +53,7 @@ void main() {
     sin(aSeed * 37.9 + uTime * 0.12)
   ) * (0.045 * travel);
   vec4 mvPosition = modelViewMatrix * vec4(position, 1.0);
-  float distanceScale = clamp(8.5 / max(1.0, -mvPosition.z), 0.42, 1.7);
+  float distanceScale = clamp(11.5 / max(1.0, -mvPosition.z), 0.48, 1.85);
   float size = mix(aSizeStart, aSizeEnd, m);
   gl_PointSize = clamp(size * uPixelRatio * distanceScale, 1.0, 8.5 * uPixelRatio);
   gl_Position = projectionMatrix * mvPosition;
@@ -81,7 +81,7 @@ void main() {
   localPosition.y -= uProgress * (0.35 + aSeed * 0.45);
   localPosition.z += uProgress * (0.55 + aSeed * 0.9);
   vec4 mvPosition = modelViewMatrix * vec4(localPosition, 1.0);
-  float distanceScale = clamp(8.5 / max(1.0, -mvPosition.z), 0.42, 1.7);
+  float distanceScale = clamp(9.8 / max(1.0, -mvPosition.z), 0.46, 1.75);
   gl_PointSize = clamp(aSize * uPixelRatio * distanceScale, 1.0, 7.0 * uPixelRatio);
   gl_Position = projectionMatrix * mvPosition;
   vColor = aColor;

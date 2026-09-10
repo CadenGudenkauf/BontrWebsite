@@ -3,8 +3,8 @@ import * as THREE from 'three';
 const TAU = Math.PI * 2;
 const GOLDEN_ANGLE = Math.PI * (3 - Math.sqrt(5));
 
-export const FLOWER_CENTER = new THREE.Vector3(5.7, 0.5, -5.5);
-export const GALAXY_CENTER = new THREE.Vector3(6.9, -0.38, -9.65);
+export const FLOWER_CENTER = new THREE.Vector3(4.9, 0.55, -6.2);
+export const GALAXY_CENTER = new THREE.Vector3(5.35, -0.15, -9.75);
 
 export type QualityProfile = {
   morphCount: number;
@@ -19,10 +19,10 @@ export const getQualityProfile = (): QualityProfile => {
   const constrained = cores <= 4 || memory <= 4;
 
   if (mobile || constrained) {
-    return { morphCount: 42000, terrainCount: 14500, starCount: 5600 };
+    return { morphCount: 60000, terrainCount: 30000, starCount: 3800 };
   }
 
-  return { morphCount: 86000, terrainCount: 28500, starCount: 11800 };
+  return { morphCount: 135000, terrainCount: 70000, starCount: 6000 };
 };
 export const makeRng = (seed = 1337) => {
   let state = seed >>> 0;
@@ -53,12 +53,12 @@ const setColor = (array: Float32Array, index: number, color: THREE.Color) => {
 };
 
 const petalConfigs = [
-  { angle: -42, length: 5.35, width: 1.45, tilt: -28, curl: 0.16, bend: 0.5 },
-  { angle: 38, length: 4.95, width: 1.62, tilt: 24, curl: 0.13, bend: -0.46 },
-  { angle: 91, length: 6.55, width: 1.9, tilt: -14, curl: -0.05, bend: 0.44 },
-  { angle: -82, length: 5.05, width: 1.58, tilt: 31, curl: 0.14, bend: -0.38 },
-  { angle: -142, length: 5.9, width: 1.82, tilt: -34, curl: 0.2, bend: 0.62 },
-  { angle: 142, length: 5.15, width: 1.68, tilt: 36, curl: 0.19, bend: -0.54 },
+  { angle: -40, length: 5.05, width: 1.38, tilt: -27, curl: 0.15, bend: 0.46 },
+  { angle: 35, length: 4.8, width: 1.5, tilt: 24, curl: 0.12, bend: -0.4 },
+  { angle: 92, length: 5.85, width: 1.66, tilt: -13, curl: -0.04, bend: 0.36 },
+  { angle: -58, length: 4.55, width: 1.42, tilt: 27, curl: 0.12, bend: -0.32 },
+  { angle: -151, length: 5.1, width: 1.58, tilt: -31, curl: 0.18, bend: 0.52 },
+  { angle: 156, length: 5.5, width: 1.52, tilt: 32, curl: 0.18, bend: -0.46 },
 ];
 
 const sampleFlowerPoint = (
@@ -83,13 +83,13 @@ const sampleFlowerPoint = (
   }
   const config = petalConfigs[Math.floor(random() * petalConfigs.length)];
   const t = Math.pow(random(), 0.92);
-  const edgeSample = random() < 0.3;
+  const edgeSample = random() < 0.52;
   const edgeSign = random() < 0.5 ? -1 : 1;
-  const side = edgeSample ? edgeSign * (0.66 + random() * 0.34) : random() * 2 - 1;
-  const envelope = Math.pow(Math.sin(Math.PI * t), 0.7);
-  const axisBend = config.bend * Math.sin(Math.PI * t) * (0.42 + t * 0.58);
-  const lx = side * config.width * envelope * (0.94 + 0.2 * random()) * 1.32 + axisBend;
-  const ly = 0.28 + t * config.length * 1.34;
+  const side = edgeSample ? edgeSign * (0.72 + random() * 0.28) : random() * 2 - 1;
+  const envelope = Math.pow(Math.sin(Math.PI * t), 0.74);
+  const axisBend = config.bend * Math.sin(Math.PI * t) * (0.38 + t * 0.52);
+  const lx = side * config.width * envelope * (0.94 + 0.16 * random()) * 1.18 + axisBend;
+  const ly = 0.28 + t * config.length * 1.22;
   const lz =
     0.52 * Math.sin(Math.PI * t) * (1 - side * side) +
     config.curl * t * t +
@@ -103,14 +103,14 @@ const sampleFlowerPoint = (
   const angle = THREE.MathUtils.degToRad(config.angle);
   const cosAngle = Math.cos(angle);
   const sinAngle = Math.sin(angle);
-  const edgeBrightness = Math.min(1.08, 0.55 + Math.pow(Math.abs(side), 1.6) * 0.42 + (1 - t) * 0.1);
+  const edgeBrightness = Math.min(0.94, 0.3 + Math.pow(Math.abs(side), 1.8) * 0.52 + (1 - t) * 0.08);
 
   return {
     x: FLOWER_CENTER.x + lx * cosAngle - yTilted * sinAngle,
     y: FLOWER_CENTER.y + lx * sinAngle + yTilted * cosAngle,
     z: FLOWER_CENTER.z + zTilted,
-    warmth: Math.exp(-t * 4.2),
-    glyph: random() < 0.22 + t * 0.36 ? 1 : 0,
+    warmth: Math.exp(-t * 6.4),
+    glyph: random() < 0.11 + t * 0.2 ? 1 : 0,
     brightness: edgeBrightness,
   };
 };
@@ -131,23 +131,23 @@ const sampleGalaxyPoint = (
     x = Math.cos(theta) * radial;
     y = Math.sin(theta) * radial;
     z = gaussian(random) * (0.2 + (1 - radial / 1.55) * 0.2);
-    warmth = 0.96;
-    brightness = 0.92 + random() * 0.16;
+    warmth = 1;
+    brightness = 1.04 + random() * 0.2;
   } else {
-    const diffuse = random() < 0.28;
-    const radiusBase = 0.88 + Math.pow(random(), diffuse ? 0.72 : 0.6) * 7.5;
+    const diffuse = random() < 0.27;
+    const radiusBase = 0.9 + Math.pow(random(), diffuse ? 0.76 : 0.62) * (diffuse ? 8.15 : 7.25);
     const radius = Math.max(0.35, radiusBase + gaussian(random) * (diffuse ? 0.24 : 0.1));
     let theta: number;
 
     if (diffuse) {
       theta = random() * TAU;
-      brightness = 0.28 + random() * 0.34;
+      brightness = 0.12 + random() * 0.18;
     } else {
       const arm = Math.floor(random() * 4);
       const armOffset = arm * (TAU / 4) + (arm % 2 === 0 ? 0.08 : -0.05);
-      const spread = 0.08 + (radius / 8.4) * 0.2;
+      const spread = 0.055 + (radius / 8.4) * 0.14;
       theta = armOffset + radius * 0.45 + gaussian(random) * spread;
-      brightness = 0.56 + random() * 0.42;
+      brightness = 0.48 + random() * 0.34;
     }
 
     x = Math.cos(theta) * radius;
@@ -156,7 +156,7 @@ const sampleGalaxyPoint = (
     warmth = Math.max(0, 1 - radius / 5.5) * 0.72 + (random() < 0.085 ? 0.26 : 0);
   }
 
-  const tilt = THREE.MathUtils.degToRad(50);
+  const tilt = THREE.MathUtils.degToRad(59);
   const yTilted = y * Math.cos(tilt) - z * Math.sin(tilt);
   const zTilted = y * Math.sin(tilt) + z * Math.cos(tilt);
   const spin = THREE.MathUtils.degToRad(-7);
@@ -184,12 +184,12 @@ export const createMorphGeometry = (count: number) => {
   const glyphStart = new Float32Array(count);
   const glyphEnd = new Float32Array(count);
   const seed = new Float32Array(count);
-  const flowerCoreCount = Math.floor(count * 0.09);
-  const galaxyCoreCount = Math.floor(count * 0.085);
-  const white = new THREE.Color(0.94, 0.95, 0.96);
-  const warm = new THREE.Color(2.35, 0.67, 0.2);
-  const galaxyWhite = new THREE.Color(0.93, 0.91, 0.86);
-  const galaxyWarm = new THREE.Color(2.42, 0.86, 0.3);
+  const flowerCoreCount = Math.floor(count * 0.055);
+  const galaxyCoreCount = Math.floor(count * 0.072);
+  const white = new THREE.Color(0.82, 0.84, 0.86);
+  const warm = new THREE.Color(1.72, 0.55, 0.2);
+  const galaxyWhite = new THREE.Color(0.86, 0.84, 0.79);
+  const galaxyWarm = new THREE.Color(1.92, 0.72, 0.28);
   const tempColor = new THREE.Color();
 
   for (let i = 0; i < count; i += 1) {
@@ -199,10 +199,10 @@ export const createMorphGeometry = (count: number) => {
     setVec3(end, i, galaxy.x, galaxy.y, galaxy.z);
 
     const angle = random() * TAU;
-    const drift = 1.6 + Math.pow(random(), 0.7) * 4.35;
+    const drift = 0.55 + Math.pow(random(), 0.78) * 1.85;
     const mx = (flower.x + galaxy.x) * 0.5 + Math.cos(angle) * drift;
-    const my = (flower.y + galaxy.y) * 0.5 + Math.sin(angle) * drift * 0.68;
-    const mz = Math.min(flower.z, galaxy.z) - 1.4 - Math.pow(random(), 0.72) * 5.4;
+    const my = (flower.y + galaxy.y) * 0.5 + Math.sin(angle) * drift * 0.52;
+    const mz = Math.min(flower.z, galaxy.z) - 0.8 - Math.pow(random(), 0.78) * 2.7;
     setVec3(mid, i, mx, my, mz);
 
     tempColor.copy(white).lerp(warm, Math.min(1, flower.warmth));
@@ -211,10 +211,10 @@ export const createMorphGeometry = (count: number) => {
     tempColor.copy(galaxyWhite).lerp(galaxyWarm, Math.min(1, galaxy.warmth));
     tempColor.multiplyScalar(galaxy.brightness * (0.82 + random() * 0.22));
     setColor(colorEnd, i, tempColor);
-    sizeStart[i] = (0.82 + random() * 1.04 + flower.glyph * 1.55) *
-      (0.86 + flower.brightness * 0.2);
-    sizeEnd[i] = (0.62 + random() * 0.86 + (galaxy.warmth > 0.75 ? 0.34 : 0)) *
-      (0.72 + galaxy.brightness * 0.45);
+    sizeStart[i] = (0.58 + random() * 0.76 + flower.glyph * 0.72) *
+      (0.82 + flower.brightness * 0.16);
+    sizeEnd[i] = (0.5 + random() * 0.68 + (galaxy.warmth > 0.75 ? 0.24 : 0)) *
+      (0.74 + galaxy.brightness * 0.32);
     glyphStart[i] = flower.glyph;
     glyphEnd[i] = 0;
     seed[i] = random();
@@ -237,11 +237,11 @@ export const createMorphGeometry = (count: number) => {
 };
 
 export const terrainHeight = (x: number, z: number) =>
-  -2.13 - x * 0.022 - x * x * 0.0033 +
-  Math.sin(x * 0.23) * 0.31 +
-  Math.cos(z * 0.31) * 0.19 +
-  Math.sin((x + z) * 0.17) * 0.14 +
-  Math.exp(-((z - 1.6) ** 2) / 8) * 0.24;
+  -2.72 - x * 0.018 - x * x * 0.0027 +
+  Math.sin((x - 0.7) * 0.21) * 0.42 +
+  Math.cos(z * 0.29) * 0.17 +
+  Math.sin((x + z) * 0.14) * 0.17 +
+  Math.exp(-((z - 1.6) ** 2) / 8) * 0.22;
 export const createTerrainGeometry = (count: number) => {
   const random = makeRng(90210);
   const positions = new Float32Array(count * 3);
@@ -251,9 +251,9 @@ export const createTerrainGeometry = (count: number) => {
   const seeds = new Float32Array(count);
   const columns = Math.max(1, Math.floor(Math.sqrt(count * 1.9)));
   const rows = Math.ceil(count / columns);
-  const cool = new THREE.Color(0.46, 0.49, 0.52);
-  const bright = new THREE.Color(1.05, 1.0, 0.9);
-  const amber = new THREE.Color(1.95, 0.73, 0.28);
+  const cool = new THREE.Color(0.28, 0.3, 0.32);
+  const bright = new THREE.Color(0.72, 0.7, 0.66);
+  const amber = new THREE.Color(1.28, 0.5, 0.22);
   const temp = new THREE.Color();
 
   for (let i = 0; i < count; i += 1) {
@@ -266,11 +266,11 @@ export const createTerrainGeometry = (count: number) => {
 
     const ridge = Math.exp(-((z - 1.5) ** 2) / 0.52) * Math.exp(-(x * x) / 85);
     const depthLift = THREE.MathUtils.clamp((z + 8) / 17, 0, 1);
-    temp.copy(cool).lerp(bright, 0.22 + depthLift * 0.32);
-    temp.lerp(amber, ridge * 0.62);
+    temp.copy(cool).lerp(bright, 0.15 + depthLift * 0.24);
+    temp.lerp(amber, ridge * 0.48);
     setColor(colors, i, temp);
-    sizes[i] = 0.78 + random() * 1.18 + ridge * 0.5;
-    glyphs[i] = random() < 0.025 ? 1 : 0;
+    sizes[i] = 0.52 + random() * 0.78 + ridge * 0.28;
+    glyphs[i] = random() < 0.014 ? 1 : 0;
     seeds[i] = random();
   }
 
@@ -304,6 +304,99 @@ export const createStarGeometry = (count: number) => {
     setColor(colors, i, temp);
     sizes[i] = 0.65 + random() * 1.05 + (random() < 0.025 ? 1.2 : 0);
     glyphs[i] = random() < 0.012 ? 1 : 0;
+    seeds[i] = random();
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+  geometry.setAttribute('aColor', new THREE.BufferAttribute(colors, 3));
+  geometry.setAttribute('aSize', new THREE.BufferAttribute(sizes, 1));
+  geometry.setAttribute('aGlyph', new THREE.BufferAttribute(glyphs, 1));
+  geometry.setAttribute('aSeed', new THREE.BufferAttribute(seeds, 1));
+  geometry.computeBoundingSphere();
+  return geometry;
+};
+
+export const createMorphGeometryFromReference = (data: Float32Array, maxCount: number) => {
+  const stride = 15;
+  const total = Math.floor(data.length / stride);
+  const count = Math.min(total, maxCount);
+  const start = new Float32Array(count * 3);
+  const mid = new Float32Array(count * 3);
+  const end = new Float32Array(count * 3);
+  const colorStart = new Float32Array(count * 3);
+  const colorEnd = new Float32Array(count * 3);
+  const sizeStart = new Float32Array(count);
+  const sizeEnd = new Float32Array(count);
+  const glyphStart = new Float32Array(count);
+  const glyphEnd = new Float32Array(count);
+  const seed = new Float32Array(count);
+  const random = makeRng(1906);
+
+  for (let i = 0; i < count; i += 1) {
+    const sourceIndex = Math.min(total - 1, Math.floor((i / Math.max(1, count - 1)) * (total - 1)));
+    const o = sourceIndex * stride;
+    const sx = data[o];
+    const sy = data[o + 1];
+    const sz = data[o + 2];
+    const ex = data[o + 3];
+    const ey = data[o + 4];
+    const ez = data[o + 5];
+    setVec3(start, i, sx, sy, sz);
+    setVec3(end, i, ex, ey, ez);
+
+    const angle = random() * TAU;
+    const drift = 0.35 + random() * 1.15;
+    setVec3(
+      mid,
+      i,
+      (sx + ex) * 0.5 + Math.cos(angle) * drift,
+      (sy + ey) * 0.5 + Math.sin(angle) * drift * 0.42,
+      Math.min(sz, ez) - 0.7 - random() * 1.8,
+    );
+    setVec3(colorStart, i, data[o + 6], data[o + 7], data[o + 8]);
+    setVec3(colorEnd, i, data[o + 9], data[o + 10], data[o + 11]);
+    sizeStart[i] = data[o + 12];
+    sizeEnd[i] = data[o + 13];
+    glyphStart[i] = data[o + 14];
+    glyphEnd[i] = 0;
+    seed[i] = random();
+  }
+
+  const geometry = new THREE.BufferGeometry();
+  geometry.setAttribute('position', new THREE.BufferAttribute(start, 3));
+  geometry.setAttribute('aStart', new THREE.BufferAttribute(start, 3));
+  geometry.setAttribute('aMid', new THREE.BufferAttribute(mid, 3));
+  geometry.setAttribute('aEnd', new THREE.BufferAttribute(end, 3));
+  geometry.setAttribute('aColorStart', new THREE.BufferAttribute(colorStart, 3));
+  geometry.setAttribute('aColorEnd', new THREE.BufferAttribute(colorEnd, 3));
+  geometry.setAttribute('aSizeStart', new THREE.BufferAttribute(sizeStart, 1));
+  geometry.setAttribute('aSizeEnd', new THREE.BufferAttribute(sizeEnd, 1));
+  geometry.setAttribute('aGlyphStart', new THREE.BufferAttribute(glyphStart, 1));
+  geometry.setAttribute('aGlyphEnd', new THREE.BufferAttribute(glyphEnd, 1));
+  geometry.setAttribute('aSeed', new THREE.BufferAttribute(seed, 1));
+  geometry.computeBoundingSphere();
+  return geometry;
+};
+
+export const createTerrainGeometryFromReference = (data: Float32Array, maxCount: number) => {
+  const stride = 7;
+  const total = Math.floor(data.length / stride);
+  const count = Math.min(total, maxCount);
+  const positions = new Float32Array(count * 3);
+  const colors = new Float32Array(count * 3);
+  const sizes = new Float32Array(count);
+  const glyphs = new Float32Array(count);
+  const seeds = new Float32Array(count);
+  const random = makeRng(7741);
+
+  for (let i = 0; i < count; i += 1) {
+    const sourceIndex = Math.min(total - 1, Math.floor((i / Math.max(1, count - 1)) * (total - 1)));
+    const o = sourceIndex * stride;
+    setVec3(positions, i, data[o], data[o + 1], data[o + 2]);
+    setVec3(colors, i, data[o + 3], data[o + 4], data[o + 5]);
+    sizes[i] = data[o + 6];
+    glyphs[i] = random() < 0.008 ? 1 : 0;
     seeds[i] = random();
   }
 
