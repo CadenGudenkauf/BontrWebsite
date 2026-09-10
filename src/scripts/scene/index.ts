@@ -41,7 +41,7 @@ if (!canvas || !home) {
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const quality = getQualityProfile();
 const mobile = window.innerWidth < 720;
-const worldGap = mobile ? 16.0 : 13.8;
+const worldGap = mobile ? 19.2 : 16.6;
 const pixelRatio = Math.min(window.devicePixelRatio || 1, mobile ? 1.45 : 1.85);
 
 const loadFloatArray = async (path: string) => {
@@ -320,10 +320,22 @@ const cameraTarget = new THREE.Vector3();
 
 const applyScene = (progress: number, time: number) => {
   const p = clamp01(progress);
-  const travelPulse = Math.sin(p * Math.PI);
+  const travelStart = mobile ? 0.16 : 0.18;
+  const travelEnd = mobile ? 0.82 : 0.78;
+  let travelProgress: number;
+  if (p <= travelStart) {
+    travelProgress = (p / travelStart) * 0.055;
+  } else if (p >= travelEnd) {
+    travelProgress = 0.945 + ((p - travelEnd) / (1 - travelEnd)) * 0.055;
+  } else {
+    const t = (p - travelStart) / (travelEnd - travelStart);
+    const eased = t * t * (3 - 2 * t);
+    travelProgress = 0.055 + eased * 0.89;
+  }
+  const travelPulse = Math.sin(travelProgress * Math.PI);
 
-  cameraCurve.getPointAt(p, camera.position);
-  targetCurve.getPointAt(p, cameraTarget);
+  cameraCurve.getPointAt(travelProgress, camera.position);
+  targetCurve.getPointAt(travelProgress, cameraTarget);
   pointer.x += (pointer.targetX - pointer.x) * 0.045;
   pointer.y += (pointer.targetY - pointer.y) * 0.045;
   camera.position.x += pointer.x * (0.18 - p * 0.07);
