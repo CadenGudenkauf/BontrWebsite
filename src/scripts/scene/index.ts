@@ -14,7 +14,6 @@ import { LineSegmentsGeometry } from 'three/addons/lines/LineSegmentsGeometry.js
 import {
   FLOWER_CENTER,
   GALAXY_CENTER,
-  createLowerPetalGeometry,
   createMorphGeometry,
   createMorphGeometryFromReference,
   createStarGeometry,
@@ -53,6 +52,7 @@ const loadFloatArray = async (path: string) => {
 
 let referenceMorph: Float32Array | null = null;
 let referenceTerrain: Float32Array | null = null;
+let referenceLowerPetal: Float32Array | null = null;
 try {
   [referenceMorph, referenceTerrain] = await Promise.all([
     loadFloatArray('data/home-morph.f32'),
@@ -60,6 +60,11 @@ try {
   ]);
 } catch (error) {
   console.warn('Reference point cloud unavailable; using procedural fallback.', error);
+}
+try {
+  referenceLowerPetal = await loadFloatArray('data/home-lower-petal.f32');
+} catch (error) {
+  console.warn('Lower petal detail unavailable; continuing without the edge patch.', error);
 }
 
 const renderer = new THREE.WebGLRenderer({
@@ -101,15 +106,20 @@ const flowerPoints = new THREE.Points(morphGeometry, flowerMaterial);
 flowerPoints.frustumCulled = false;
 scene.add(flowerPoints);
 
-// This is a genuinely additional petal, not a reallocation of the reference cloud.
-// It lives behind the foreground ridge on the flower depth plane so both layers remain complete.
-const lowerPetalGeometry = createLowerPetalGeometry(Math.max(2400, Math.round(quality.morphCount * 0.052)));
-const lowerPetalMaterial = createSimplePointMaterial(pixelRatio, 0.88);
-lowerPetalMaterial.uniforms.uProgress.value = 0;
-const lowerPetalPoints = new THREE.Points(lowerPetalGeometry, lowerPetalMaterial);
-lowerPetalPoints.frustumCulled = false;
-lowerPetalPoints.renderOrder = -2;
-scene.add(lowerPetalPoints);
+// Only the missing lower edge is added here. The existing flower cloud stays intact,
+// and the complete terrain remains a separate foreground layer in front of this patch.
+const lowerPetalGeometry = referenceLowerPetal
+  ? createTerrainGeometryFromReference(referenceLowerPetal, mobile ? 520 : 683)
+  : null;
+const lowerPetalMaterial = lowerPetalGeometry ? createSimplePointMaterial(pixelRatio, 0.72) : null;
+const lowerPetalPoints = lowerPetalGeometry && lowerPetalMaterial
+  ? new THREE.Points(lowerPetalGeometry, lowerPetalMaterial)
+  : null;
+if (lowerPetalPoints) {
+  lowerPetalPoints.frustumCulled = false;
+  lowerPetalPoints.renderOrder = -2;
+  scene.add(lowerPetalPoints);
+}
 
 const galaxyMaterial = createMorphMaterial(pixelRatio);
 galaxyMaterial.uniforms.uMorph.value = 1;
@@ -127,7 +137,7 @@ const terrainGeometry = referenceTerrain
   : createTerrainGeometry(quality.terrainCount);
 const terrainPoints = new THREE.Points(terrainGeometry, terrainMaterial);
 terrainPoints.frustumCulled = false;
-terrainPoints.renderOrder = 1;
+terrainPoints.renderOrder = 2;
 foreground.add(terrainPoints);
 
 const starMaterial = createSimplePointMaterial(pixelRatio, 0.58);
@@ -364,9 +374,11 @@ const applyScene = (progress: number, time: number) => {
   flowerMaterial.uniforms.uMorph.value = 0;
   flowerMaterial.uniforms.uTime.value = time;
   flowerMaterial.uniforms.uOpacity.value = 0.98;
-  lowerPetalMaterial.uniforms.uTime.value = time;
-  lowerPetalMaterial.uniforms.uProgress.value = 0;
-  lowerPetalMaterial.uniforms.uOpacity.value = 0.88;
+  if (lowerPetalMaterial) {
+    lowerPetalMaterial.uniforms.uTime.value = time;
+    lowerPetalMaterial.uniforms.uProgress.value = 0;
+    lowerPetalMaterial.uniforms.uOpacity.value = 0.72;
+  }
   galaxyMaterial.uniforms.uMorph.value = 1;
   galaxyMaterial.uniforms.uTime.value = time;
   galaxyMaterial.uniforms.uOpacity.value = 0.98;
@@ -455,7 +467,7 @@ const resize = () => {
   camera.aspect = width / Math.max(1, height);
   camera.updateProjectionMatrix();
   flowerMaterial.uniforms.uPixelRatio.value = nextPixelRatio;
-  lowerPetalMaterial.uniforms.uPixelRatio.value = nextPixelRatio;
+  if (lowerPetalMaterial) lowerPetalMaterial.uniforms.uPixelRatio.value = nextPixelRatio;
   galaxyMaterial.uniforms.uPixelRatio.value = nextPixelRatio;
   terrainMaterial.uniforms.uPixelRatio.value = nextPixelRatio;
   starMaterial.uniforms.uPixelRatio.value = nextPixelRatio;
@@ -477,11 +489,11 @@ window.addEventListener('pagehide', () => {
   renderer.setAnimationLoop(null);
   ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
   morphGeometry.dispose();
-  lowerPetalGeometry.dispose();
+  lowerPetalGeometry?.dispose();
   terrainPoints.geometry.dispose();
   starGeometry.dispose();
   flowerMaterial.dispose();
-  lowerPetalMaterial.dispose();
+  lowerPetalMaterial?.dispose();
   galaxyMaterial.dispose();
   terrainMaterial.dispose();
   starMaterial.dispose();
