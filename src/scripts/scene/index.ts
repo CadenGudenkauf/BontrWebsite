@@ -423,6 +423,13 @@ if (reduceMotion) {
 }
 
 let exploreTween: gsap.core.Tween | null = null;
+let exploreTraveling = false;
+const finishExploreTravel = () => {
+  exploreTraveling = false;
+  exploreTween = null;
+  resize();
+};
+
 if (exploreCta && fieldSection) {
   exploreCta.addEventListener('click', (event) => {
     event.preventDefault();
@@ -436,13 +443,15 @@ if (exploreCta && fieldSection) {
     }
 
     const screens = Math.abs(targetY - window.scrollY) / Math.max(1, window.innerHeight);
+    exploreTraveling = true;
+    resize();
     exploreTween = gsap.to(window, {
       duration: THREE.MathUtils.clamp(3.8 + screens * 0.8, 4.4, 5.8),
       ease: 'sine.inOut',
-      scrollTo: { y: targetY, autoKill: true },
+      scrollTo: { y: targetY, autoKill: true, onAutoKill: finishExploreTravel },
       overwrite: true,
-      onComplete: () => { exploreTween = null; history.replaceState(null, '', '#field'); },
-      onInterrupt: () => { exploreTween = null; },
+      onComplete: () => { finishExploreTravel(); history.replaceState(null, '', '#field'); },
+      onInterrupt: finishExploreTravel,
     });
   });
 }
@@ -460,11 +469,13 @@ window.addEventListener(
 const resize = () => {
   const width = window.innerWidth;
   const height = window.innerHeight;
-  const nextPixelRatio = Math.min(window.devicePixelRatio || 1, width < 720 ? 1.45 : 1.85);
+  const qualityCap = exploreTraveling ? (width < 720 ? 1.0 : 1.2) : (width < 720 ? 1.45 : 1.85);
+  const nextPixelRatio = Math.min(window.devicePixelRatio || 1, qualityCap);
   renderer.setPixelRatio(nextPixelRatio);
   renderer.setSize(width, height, false);
   composer.setPixelRatio(nextPixelRatio);
   composer.setSize(width, height);
+  smaaPass.enabled = !exploreTraveling;
   camera.aspect = width / Math.max(1, height);
   camera.updateProjectionMatrix();
   flowerMaterial.uniforms.uPixelRatio.value = nextPixelRatio;
