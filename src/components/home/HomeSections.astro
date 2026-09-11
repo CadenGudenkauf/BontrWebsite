@@ -8,7 +8,7 @@
         <span>TOMORROW</span>
       </h1>
       <p class="hero__lede">Bridging ideas, people and technology<br />for a more human future.</p>
-      <a class="hero__cta" href="#field">
+      <a class="hero__cta" href="#field" data-explore-cta>
         <span>Explore Bontr</span>
         <span class="hero__cta-arrow" aria-hidden="true">→</span>
       </a>
@@ -27,3 +27,65 @@
     </div>
   </section>
 </div>
+
+<script>
+  const exploreCta = document.querySelector<HTMLAnchorElement>('[data-explore-cta]');
+  const fieldSection = document.querySelector<HTMLElement>('#field');
+
+  if (exploreCta && fieldSection) {
+    let animationFrame = 0;
+    let isAnimating = false;
+    let previousScrollBehavior = '';
+
+    const stopScrollAnimation = () => {
+      if (!isAnimating) return;
+      cancelAnimationFrame(animationFrame);
+      isAnimating = false;
+      document.documentElement.style.scrollBehavior = previousScrollBehavior;
+    };
+
+    const easeInOutCubic = (t: number) =>
+      t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+
+    exploreCta.addEventListener('click', (event) => {
+      event.preventDefault();
+
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        fieldSection.scrollIntoView({ behavior: 'auto', block: 'start' });
+        history.pushState(null, '', '#field');
+        return;
+      }
+
+      stopScrollAnimation();
+      const startY = window.scrollY;
+      const targetY = fieldSection.getBoundingClientRect().top + window.scrollY;
+      const distance = targetY - startY;
+      const screens = Math.abs(distance) / Math.max(1, window.innerHeight);
+      const duration = Math.min(3400, Math.max(2600, screens * 1400));
+      const startedAt = performance.now();
+
+      previousScrollBehavior = document.documentElement.style.scrollBehavior;
+      document.documentElement.style.scrollBehavior = 'auto';
+      isAnimating = true;
+
+      const tick = (now: number) => {
+        const progress = Math.min(1, (now - startedAt) / duration);
+        window.scrollTo(0, startY + distance * easeInOutCubic(progress));
+
+        if (progress < 1 && isAnimating) {
+          animationFrame = requestAnimationFrame(tick);
+          return;
+        }
+
+        isAnimating = false;
+        document.documentElement.style.scrollBehavior = previousScrollBehavior;
+        history.pushState(null, '', '#field');
+      };
+
+      animationFrame = requestAnimationFrame(tick);
+    });
+
+    window.addEventListener('wheel', stopScrollAnimation, { passive: true });
+    window.addEventListener('touchstart', stopScrollAnimation, { passive: true });
+  }
+</script>
