@@ -284,8 +284,13 @@ export const createTerrainGeometry = (count: number) => {
   return geometry;
 };
 
-export const createStarGeometry = (count: number) => {
-  const random = makeRng(20260909);
+export const createStarGeometry = (
+  count: number,
+  centerY = 0,
+  halfSpanY = 10,
+  seed = 20260909,
+) => {
+  const random = makeRng(seed);
   const positions = new Float32Array(count * 3);
   const colors = new Float32Array(count * 3);
   const sizes = new Float32Array(count);
@@ -296,7 +301,7 @@ export const createStarGeometry = (count: number) => {
   const temp = new THREE.Color();
   for (let i = 0; i < count; i += 1) {
     const x = (random() * 2 - 1) * 18;
-    const y = (random() * 2 - 1) * 10;
+    const y = centerY + (random() * 2 - 1) * halfSpanY;
     const z = -7 - random() * 18;
     setVec3(positions, i, x, y, z);
     const warm = random() < 0.075 ? 0.65 + random() * 0.35 : 0;

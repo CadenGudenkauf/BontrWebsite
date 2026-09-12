@@ -34,7 +34,6 @@ gsap.registerPlugin(ScrollTrigger);
 
 const canvas = document.querySelector<HTMLCanvasElement>('[data-scene-canvas]');
 const home = document.querySelector<HTMLElement>('.home');
-const fieldCopy = document.querySelector<HTMLElement>('.field__copy');
 if (!canvas || !home) {
   throw new Error('Bontr scene mount was not found.');
 }
@@ -120,13 +119,16 @@ terrainPoints.frustumCulled = false;
 foreground.add(terrainPoints);
 
 const starMaterial = createSimplePointMaterial(pixelRatio, 0.58);
-const starGeometry = createStarGeometry(quality.starCount);
-[0, -worldGap * 0.5, -worldGap].forEach((offsetY) => {
-  const points = new THREE.Points(starGeometry, starMaterial);
-  points.position.y = offsetY;
-  points.frustumCulled = false;
-  scene.add(points);
-});
+// Use one continuous star volume through the full camera path instead of stacked
+// copies. The stacked fields could expose a visible density seam mid-transition.
+const starGeometry = createStarGeometry(
+  Math.round(quality.starCount * 2.8),
+  -worldGap * 0.5,
+  worldGap * 0.5 + 13,
+);
+const starPoints = new THREE.Points(starGeometry, starMaterial);
+starPoints.frustumCulled = false;
+scene.add(starPoints);
 
 const flowerCoreMaterial = new THREE.MeshBasicMaterial({
   color: 0x010101,
@@ -148,7 +150,12 @@ const galaxyGlow = new THREE.Mesh(new THREE.PlaneGeometry(3.45, 2.15), galaxyGlo
 galaxyGlow.position.copy(GALAXY_CENTER).add(new THREE.Vector3(0.05, -worldGap + 0.02, -0.3));
 scene.add(galaxyGlow);
 
-const silhouetteMaterial = new THREE.MeshBasicMaterial({ color: 0x050505 });
+const silhouetteMaterial = new THREE.MeshBasicMaterial({
+  color: 0x050505,
+  transparent: true,
+  opacity: 1,
+  depthWrite: false,
+});
 const person = new THREE.Group();
 const personX = -1.65;
 const personZ = 1.7;
@@ -340,13 +347,7 @@ const applyScene = (progress: number, time: number) => {
   }
   const travelPulse = Math.sin(travelProgress * Math.PI);
   const flowerExit = 1 - THREE.MathUtils.smoothstep(p, 0.18, 0.40);
-  const fieldReveal = THREE.MathUtils.smoothstep(p, 0.42, 0.54);
-
-  if (fieldCopy) {
-    fieldCopy.style.opacity = fieldReveal.toFixed(3);
-    fieldCopy.style.visibility = fieldReveal > 0.002 ? 'visible' : 'hidden';
-    fieldCopy.style.transform = `translate3d(0, ${(1 - fieldReveal) * 18}px, 0)`;
-  }
+  const landscapeExit = 1 - THREE.MathUtils.smoothstep(p, 0.24, 0.43);
 
   cameraCurve.getPointAt(travelProgress, camera.position);
   targetCurve.getPointAt(travelProgress, cameraTarget);
@@ -366,9 +367,10 @@ const applyScene = (progress: number, time: number) => {
   galaxyMaterial.uniforms.uTime.value = time;
   galaxyMaterial.uniforms.uOpacity.value = 0.98;
 
+  foreground.visible = landscapeExit > 0.002;
   foreground.position.set(0, 0, 0);
   terrainMaterial.uniforms.uTime.value = time;
-  terrainMaterial.uniforms.uOpacity.value = 0.95;
+  terrainMaterial.uniforms.uOpacity.value = 0.95 * landscapeExit;
   const shadowDirection = terrainMaterial.uniforms.uShadowDir.value as THREE.Vector2;
   shadowDirection.set((personX - FLOWER_CENTER.x) * 0.24, (personZ - FLOWER_CENTER.z) * 1.34).normalize();
   (terrainMaterial.uniforms.uShadowOrigin.value as THREE.Vector2).set(personX, personZ);
@@ -386,14 +388,15 @@ const applyScene = (progress: number, time: number) => {
   galaxyGlowMaterial.uniforms.uOpacity.value = 0.2;
   galaxyGlow.quaternion.copy(camera.quaternion);
 
-  person.visible = true;
+  person.visible = landscapeExit > 0.002;
+  silhouetteMaterial.opacity = landscapeExit;
   person.position.set(personX, personGround + 0.14, personZ);
   person.scale.setScalar(personBaseScale);
   personHalo.position.set(personX, personGround + 0.31, personZ - 0.04);
   personHalo.quaternion.copy(camera.quaternion);
-  personHaloMaterial.uniforms.uOpacity.value = 0.16;
+  personHaloMaterial.uniforms.uOpacity.value = 0.16 * landscapeExit;
   contactShadow.position.set(personX, personGround + 0.025, personZ + 0.015);
-  contactShadowMaterial.uniforms.uOpacity.value = 0.58;
+  contactShadowMaterial.uniforms.uOpacity.value = 0.58 * landscapeExit;
 
   flowerOrbitA.material.opacity = 0.18 * flowerExit;
   flowerOrbitB.material.opacity = 0.08 * flowerExit;
