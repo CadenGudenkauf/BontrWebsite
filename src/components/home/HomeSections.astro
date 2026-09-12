@@ -54,7 +54,7 @@
     const targetY = fieldSection.getBoundingClientRect().top + window.scrollY;
     setTraveling(true);
     exploreTween = gsap.to(window, {
-      duration: 4.6,
+      duration: 2.3,
       ease: 'sine.inOut',
       scrollTo: { y: targetY, autoKill: true, onAutoKill: finishExplore },
       overwrite: true,
