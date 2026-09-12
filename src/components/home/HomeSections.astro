@@ -54,7 +54,7 @@
     setTraveling(true);
     exploreTween = gsap.to(window, {
       duration: 2.3,
-      ease: 'none',
+      ease: 'power1.inOut',
       scrollTo: { y: targetY, autoKill: true, onAutoKill: finishExplore },
       overwrite: true,
       onComplete: () => {
