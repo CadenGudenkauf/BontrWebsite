@@ -338,7 +338,7 @@ const applyScene = (progress: number, time: number) => {
     travelProgress = 0.055 + eased * 0.89;
   }
   const travelPulse = Math.sin(travelProgress * Math.PI);
-  const flowerExit = 1 - THREE.MathUtils.smoothstep(p, 0.2, 0.44);
+  const flowerExit = 1 - THREE.MathUtils.smoothstep(p, 0.16, 0.36);
 
   cameraCurve.getPointAt(travelProgress, camera.position);
   targetCurve.getPointAt(travelProgress, cameraTarget);
@@ -353,6 +353,7 @@ const applyScene = (progress: number, time: number) => {
   flowerMaterial.uniforms.uMorph.value = 0;
   flowerMaterial.uniforms.uTime.value = time;
   flowerMaterial.uniforms.uOpacity.value = 0.98 * flowerExit;
+  flowerPoints.visible = flowerExit > 0.002;
   galaxyMaterial.uniforms.uMorph.value = 1;
   galaxyMaterial.uniforms.uTime.value = time;
   galaxyMaterial.uniforms.uOpacity.value = 0.98;
@@ -372,6 +373,7 @@ const applyScene = (progress: number, time: number) => {
   flowerCoreMaterial.opacity = 0.82 * flowerExit;
   flowerCore.visible = flowerExit > 0.002;
   flowerGlowMaterial.uniforms.uOpacity.value = 0.24 * flowerExit;
+  flowerGlow.visible = flowerExit > 0.002;
   flowerGlow.quaternion.copy(camera.quaternion);
   galaxyGlowMaterial.uniforms.uOpacity.value = 0.2;
   galaxyGlow.quaternion.copy(camera.quaternion);
@@ -387,6 +389,8 @@ const applyScene = (progress: number, time: number) => {
 
   flowerOrbitA.material.opacity = 0.18 * flowerExit;
   flowerOrbitB.material.opacity = 0.08 * flowerExit;
+  flowerOrbitA.line.visible = flowerExit > 0.002;
+  flowerOrbitB.line.visible = flowerExit > 0.002;
   galaxyOrbitA.material.opacity = 0.14;
   galaxyOrbitB.material.opacity = 0.07;
   travelMaterial.opacity = mobile ? 0.006 : 0.009;
