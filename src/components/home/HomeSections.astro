@@ -40,7 +40,6 @@
 
   const setTraveling = (active: boolean) => {
     document.documentElement.classList.toggle('explore-traveling', active);
-    window.dispatchEvent(new CustomEvent('bontr:explore-quality'));
   };
 
   const finishExplore = () => {
@@ -55,7 +54,7 @@
     setTraveling(true);
     exploreTween = gsap.to(window, {
       duration: 2.3,
-      ease: 'sine.inOut',
+      ease: 'none',
       scrollTo: { y: targetY, autoKill: true, onAutoKill: finishExplore },
       overwrite: true,
       onComplete: () => {

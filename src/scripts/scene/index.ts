@@ -450,7 +450,6 @@ const resize = () => {
     .forEach((material) => material.resolution.set(width, height));
 };
 window.addEventListener('resize', resize, { passive: true });
-window.addEventListener('bontr:explore-quality', resize);
 resize();
 ScrollTrigger.refresh();
 
