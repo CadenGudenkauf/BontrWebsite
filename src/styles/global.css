@@ -176,10 +176,11 @@ a {
 
 .field__copy {
   position: sticky;
-  top: 8.5vh;
+  top: -40vh;
   left: 5.3vw;
   width: min(28vw, 23.5rem);
   margin-top: -9vh;
+  will-change: transform;
 }
 
 .field__eyebrow {
@@ -246,7 +247,7 @@ a {
   }
 
   .field__copy {
-    top: 18vh;
+    top: -40vh;
     left: 5.5vw;
     width: 82vw;
     margin-top: -4vh;
@@ -275,6 +276,6 @@ a {
   }
 
   .field__copy {
-    top: 6.5vh;
+    top: -40vh;
   }
 }
