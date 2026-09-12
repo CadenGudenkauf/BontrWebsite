@@ -41,7 +41,7 @@ if (!canvas || !home) {
 const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 const quality = getQualityProfile();
 const mobile = window.innerWidth < 720;
-const worldGap = mobile ? 19.2 : 16.6;
+const worldGap = mobile ? 17.5 : 15.0;
 const pixelRatio = Math.min(window.devicePixelRatio || 1, mobile ? 1.45 : 1.85);
 
 const loadFloatArray = async (path: string) => {
