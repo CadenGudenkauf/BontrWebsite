@@ -338,7 +338,7 @@ const applyScene = (progress: number, time: number) => {
     travelProgress = 0.055 + eased * 0.89;
   }
   const travelPulse = Math.sin(travelProgress * Math.PI);
-  const flowerExit = 1 - THREE.MathUtils.smoothstep(p, 0.16, 0.36);
+  const flowerExit = 1 - THREE.MathUtils.smoothstep(p, 0.18, 0.40);
 
   cameraCurve.getPointAt(travelProgress, camera.position);
   targetCurve.getPointAt(travelProgress, cameraTarget);
