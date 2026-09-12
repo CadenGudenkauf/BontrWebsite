@@ -8,10 +8,10 @@
         <span>TOMORROW</span>
       </h1>
       <p class="hero__lede">Bridging ideas, people and technology<br />for a more human future.</p>
-      <a class="hero__cta" href="#field" data-explore-cta>
+      <button class="hero__cta" type="button" data-explore-cta aria-controls="field">
         <span>Explore Bontr</span>
         <span class="hero__cta-arrow" aria-hidden="true">→</span>
-      </a>
+      </button>
     </div>
   </section>
 
@@ -27,3 +27,47 @@
     </div>
   </section>
 </div>
+
+<script>
+  import { gsap } from 'gsap';
+  import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
+
+  gsap.registerPlugin(ScrollToPlugin);
+
+  const exploreCta = document.querySelector<HTMLButtonElement>('[data-explore-cta]');
+  const fieldSection = document.querySelector<HTMLElement>('#field');
+  let exploreTween: gsap.core.Tween | null = null;
+
+  const setTraveling = (active: boolean) => {
+    document.documentElement.classList.toggle('explore-traveling', active);
+    window.dispatchEvent(new CustomEvent('bontr:explore-quality'));
+  };
+
+  const finishExplore = () => {
+    setTraveling(false);
+    exploreTween = null;
+  };
+
+  const travelToField = () => {
+    if (!exploreCta || !fieldSection) return;
+    exploreTween?.kill();
+    const targetY = fieldSection.getBoundingClientRect().top + window.scrollY;
+    setTraveling(true);
+    exploreTween = gsap.to(window, {
+      duration: 4.6,
+      ease: 'sine.inOut',
+      scrollTo: { y: targetY, autoKill: true, onAutoKill: finishExplore },
+      overwrite: true,
+      onComplete: () => {
+        history.replaceState(null, '', '#field');
+        finishExplore();
+      },
+      onInterrupt: finishExplore,
+    });
+  };
+
+  if (exploreCta && fieldSection) {
+    exploreCta.dataset.exploreReady = 'true';
+    exploreCta.addEventListener('click', travelToField);
+  }
+</script>

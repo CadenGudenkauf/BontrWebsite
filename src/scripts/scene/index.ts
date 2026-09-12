@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
 import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
 import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
@@ -31,12 +30,10 @@ import {
   createTerrainPointMaterial,
 } from './materials';
 
-gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
+gsap.registerPlugin(ScrollTrigger);
 
 const canvas = document.querySelector<HTMLCanvasElement>('[data-scene-canvas]');
 const home = document.querySelector<HTMLElement>('.home');
-const exploreCta = document.querySelector<HTMLAnchorElement>('[data-explore-cta]');
-const fieldSection = document.querySelector<HTMLElement>('#field');
 if (!canvas || !home) {
   throw new Error('Bontr scene mount was not found.');
 }
@@ -422,40 +419,6 @@ if (reduceMotion) {
   });
 }
 
-let exploreTween: gsap.core.Tween | null = null;
-let exploreTraveling = false;
-const finishExploreTravel = () => {
-  exploreTraveling = false;
-  exploreTween = null;
-  resize();
-};
-
-if (exploreCta && fieldSection) {
-  exploreCta.addEventListener('click', (event) => {
-    event.preventDefault();
-    exploreTween?.kill();
-
-    const targetY = fieldSection.getBoundingClientRect().top + window.scrollY;
-    if (reduceMotion) {
-      window.scrollTo(0, targetY);
-      history.replaceState(null, '', '#field');
-      return;
-    }
-
-    const screens = Math.abs(targetY - window.scrollY) / Math.max(1, window.innerHeight);
-    exploreTraveling = true;
-    resize();
-    exploreTween = gsap.to(window, {
-      duration: THREE.MathUtils.clamp(3.8 + screens * 0.8, 4.4, 5.8),
-      ease: 'sine.inOut',
-      scrollTo: { y: targetY, autoKill: true, onAutoKill: finishExploreTravel },
-      overwrite: true,
-      onComplete: () => { finishExploreTravel(); history.replaceState(null, '', '#field'); },
-      onInterrupt: finishExploreTravel,
-    });
-  });
-}
-
 window.addEventListener(
   'pointermove',
   (event) => {
@@ -469,6 +432,7 @@ window.addEventListener(
 const resize = () => {
   const width = window.innerWidth;
   const height = window.innerHeight;
+  const exploreTraveling = document.documentElement.classList.contains('explore-traveling');
   const qualityCap = exploreTraveling ? (width < 720 ? 1.0 : 1.2) : (width < 720 ? 1.45 : 1.85);
   const nextPixelRatio = Math.min(window.devicePixelRatio || 1, qualityCap);
   renderer.setPixelRatio(nextPixelRatio);
@@ -486,6 +450,7 @@ const resize = () => {
     .forEach((material) => material.resolution.set(width, height));
 };
 window.addEventListener('resize', resize, { passive: true });
+window.addEventListener('bontr:explore-quality', resize);
 resize();
 ScrollTrigger.refresh();
 

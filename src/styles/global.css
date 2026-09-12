@@ -139,6 +139,8 @@ a {
 .hero__cta {
   display: flex;
   align-items: center;
+  background: transparent;
+  cursor: pointer;
   justify-content: space-between;
   width: clamp(10.4rem, 14.4vw, 12.5rem);
   height: clamp(2.45rem, 5.7vh, 3rem);
