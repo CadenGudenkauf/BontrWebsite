@@ -34,6 +34,7 @@ gsap.registerPlugin(ScrollTrigger);
 
 const canvas = document.querySelector<HTMLCanvasElement>('[data-scene-canvas]');
 const home = document.querySelector<HTMLElement>('.home');
+const fieldCopy = document.querySelector<HTMLElement>('.field__copy');
 if (!canvas || !home) {
   throw new Error('Bontr scene mount was not found.');
 }
@@ -339,6 +340,13 @@ const applyScene = (progress: number, time: number) => {
   }
   const travelPulse = Math.sin(travelProgress * Math.PI);
   const flowerExit = 1 - THREE.MathUtils.smoothstep(p, 0.18, 0.40);
+  const fieldReveal = THREE.MathUtils.smoothstep(p, 0.42, 0.54);
+
+  if (fieldCopy) {
+    fieldCopy.style.opacity = fieldReveal.toFixed(3);
+    fieldCopy.style.visibility = fieldReveal > 0.002 ? 'visible' : 'hidden';
+    fieldCopy.style.transform = `translate3d(0, ${(1 - fieldReveal) * 18}px, 0)`;
+  }
 
   cameraCurve.getPointAt(travelProgress, camera.position);
   targetCurve.getPointAt(travelProgress, cameraTarget);
