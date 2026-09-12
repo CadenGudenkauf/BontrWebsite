@@ -334,18 +334,10 @@ const cameraTarget = new THREE.Vector3();
 
 const applyScene = (progress: number, time: number) => {
   const p = clamp01(progress);
-  const travelStart = mobile ? 0.16 : 0.18;
-  const travelEnd = mobile ? 0.82 : 0.78;
-  let travelProgress: number;
-  if (p <= travelStart) {
-    travelProgress = (p / travelStart) * 0.055;
-  } else if (p >= travelEnd) {
-    travelProgress = 0.945 + ((p - travelEnd) / (1 - travelEnd)) * 0.055;
-  } else {
-    const t = (p - travelStart) / (travelEnd - travelStart);
-    const eased = t * t * (3 - 2 * t);
-    travelProgress = 0.055 + eased * 0.89;
-  }
+  // Keep camera travel directly coupled to page progress. The Explore button owns
+  // the acceleration curve, so adding another ease here causes a perceptible
+  // slow phase followed by a sudden speed-up.
+  const travelProgress = p;
   const travelPulse = Math.sin(travelProgress * Math.PI);
   const flowerExit = 1 - THREE.MathUtils.smoothstep(p, 0.18, 0.40);
   const landscapeExit = 1 - THREE.MathUtils.smoothstep(p, 0.24, 0.43);
@@ -439,7 +431,7 @@ if (reduceMotion) {
       trigger: home,
       start: 'top top',
       end: 'bottom bottom',
-      scrub: 0.35,
+      scrub: true,
       invalidateOnRefresh: true,
     },
   });
