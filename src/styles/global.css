@@ -170,7 +170,7 @@ a {
 
 .field__copy {
   position: absolute;
-  top: 26.3vh;
+  top: 22.8vh;
   left: 5.3vw;
   width: min(28vw, 23.5rem);
 }
@@ -239,7 +239,7 @@ a {
   }
 
   .field__copy {
-    top: 58vh;
+    top: 54vh;
     left: 5.5vw;
     width: 82vw;
   }
@@ -267,6 +267,6 @@ a {
   }
 
   .field__copy {
-    top: 21.5vh;
+    top: 19.5vh;
   }
 }
